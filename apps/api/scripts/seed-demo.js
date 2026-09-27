@@ -31,7 +31,13 @@ const supabase = createClient(url, cleServiceRole, {
 
 /** @type {UtilisateurDemo[]} */
 const UTILISATEURS_DEMO = [
-  { email: 'admin@itrm.demo', motDePasse: 'Admin123!', prenom: 'Koffi', nom: "N'Guessan", role: 'ADMIN' },
+  {
+    email: 'admin@itrm.demo',
+    motDePasse: 'Admin123!',
+    prenom: 'Koffi',
+    nom: "N'Guessan",
+    role: 'ADMIN',
+  },
   { email: 'aya@itrm.demo', motDePasse: 'User123!', prenom: 'Aya', nom: 'Kouassi', role: 'USER' },
   { email: 'yao@itrm.demo', motDePasse: 'User123!', prenom: 'Yao', nom: 'Konan', role: 'USER' },
 ];
@@ -92,6 +98,9 @@ async function idMateriel(nom) {
 async function rpc(fonction, parametres) {
   const { data, error } = await supabase.rpc(fonction, parametres);
   if (error) throw new Error(`${fonction} : ${error.message} — ${error.details ?? ''}`);
+  // create_request déployée renvoie { id, status, reference } (la migration dit uuid) :
+  // on ramène toujours l'identifiant seul.
+  if (data && typeof data === 'object' && 'id' in data) return data.id;
   return data;
 }
 

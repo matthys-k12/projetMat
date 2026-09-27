@@ -1,0 +1,785 @@
+openapi: 3.0.3
+info:
+  title: IT Request Manager — API
+  version: 1.0.0
+  description: |
+    API REST (tier métier) de gestion des demandes de matériel informatique.
+
+    **Authentification** : toutes les routes (sauf `/health`) exigent
+    `Authorization: Bearer <access_token Supabase>`. Le token s'obtient côté front
+    via `supabase.auth.signInWithPassword`. Le rôle est lu dans `profiles.role`.
+
+    **Erreurs** : `{ statusCode, code, message, details? }`, message en français.
+
+    **Listes paginées** : `{ data, meta: { page, limite, total, totalPages } }`, `limit` ≤ 50.
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Santé
+  - name: Authentification
+  - name: Catalogue
+  - name: Demandes
+  - name: Notifications
+  - name: Tableau de bord
+  - name: Admin — Demandes
+  - name: Admin — Matériels
+  - name: Admin — Catégories
+  - name: Admin — Audit
+
+paths:
+  /health:
+    get:
+      tags: [Santé]
+      summary: Vérifie que l'API répond
+      security: []
+      responses:
+        '200':
+          description: API disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statut: { type: string, example: ok }
+                  service: { type: string }
+                  date: { type: string, format: date-time }
+
+  /auth/me:
+    get:
+      tags: [Authentification]
+      summary: Profil de l'utilisateur connecté
+      responses:
+        '200':
+          description: Profil
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profil' }
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
+        '403': { $ref: '#/components/responses/Interdit' }
+  /auth/logout:
+    post:
+      tags: [Authentification]
+      summary: Révoque la session côté Supabase
+      responses:
+        '204': { description: Déconnecté }
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
+
+  /materials:
+    get:
+      tags: [Catalogue]
+      summary: Catalogue (matériels actifs d'une catégorie active)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limite'
+        - { name: search, in: query, schema: { type: string }, description: Recherche sur le nom }
+        - { name: category, in: query, schema: { type: string, format: uuid } }
+        - name: availability
+          in: query
+          schema: { type: string, enum: [disponible, stock_faible, indisponible] }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [nom_asc, nom_desc, stock_desc, recent], default: nom_asc }
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListeMateriels' }
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
+        '422': { $ref: '#/components/responses/Invalide' }
+  /materials/{id}:
+    get:
+      tags: [Catalogue]
+      summary: Détail d'un matériel du catalogue
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Matériel
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Materiel' }
+        '404': { $ref: '#/components/responses/Introuvable' }
+  /categories:
+    get:
+      tags: [Catalogue]
+      summary: Catégories actives (filtres du catalogue)
+      responses:
+        '200':
+          description: Catégories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Categorie' }
+
+  /requests:
+    post:
+      tags: [Demandes]
+      summary: Crée une demande (RPC create_request)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreationDemande' }
+      responses:
+        '201':
+          description: Demande créée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DemandeDetail' }
+        '409': { $ref: '#/components/responses/Conflit' }
+        '422': { $ref: '#/components/responses/Invalide' }
+  /requests/me:
+    get:
+      tags: [Demandes]
+      summary: Mes demandes
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limite'
+        - $ref: '#/components/parameters/Statut'
+        - {
+            name: search,
+            in: query,
+            schema: { type: string },
+            description: Recherche par référence,
+          }
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListeDemandes' }
+  /requests/{id}:
+    get:
+      tags: [Demandes]
+      summary: Détail d'une de mes demandes (404 si elle appartient à un autre)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Demande
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DemandeDetail' }
+        '404': { $ref: '#/components/responses/Introuvable' }
+  /requests/{id}/cancel:
+    patch:
+      tags: [Demandes]
+      summary: Annule une demande en attente (RPC cancel_request)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Demande annulée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DemandeDetail' }
+        '404': { $ref: '#/components/responses/Introuvable' }
+        '409': { $ref: '#/components/responses/Conflit' }
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Mes notifications
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limite'
+        - { name: unread, in: query, schema: { type: string, enum: ['true', 'false'] } }
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Meta'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/Notification' } }
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Nombre de notifications non lues
+      responses:
+        '200':
+          description: Compteur
+          content:
+            application/json:
+              schema: { type: object, properties: { nombre: { type: integer } } }
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Marque une notification comme lue
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Notification
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Notification' }
+        '404': { $ref: '#/components/responses/Introuvable' }
+  /notifications/read-all:
+    patch:
+      tags: [Notifications]
+      summary: Marque toutes mes notifications comme lues
+      responses:
+        '200':
+          description: Nombre mis à jour
+          content:
+            application/json:
+              schema: { type: object, properties: { nombre: { type: integer } } }
+
+  /dashboard/user:
+    get:
+      tags: [Tableau de bord]
+      summary: Compteurs de mes demandes (RPC get_user_dashboard_stats)
+      responses:
+        '200':
+          description: Statistiques
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatsUtilisateur' }
+
+  /admin/dashboard:
+    get:
+      tags: [Tableau de bord]
+      summary: Indicateurs globaux (RPC get_admin_dashboard_stats) — ADMIN
+      responses:
+        '200':
+          description: Statistiques
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatsAdmin' }
+        '403': { $ref: '#/components/responses/Interdit' }
+
+  /admin/requests:
+    get:
+      tags: [Admin — Demandes]
+      summary: Toutes les demandes
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limite'
+        - $ref: '#/components/parameters/Statut'
+        - {
+            name: search,
+            in: query,
+            schema: { type: string },
+            description: Référence ou nom du demandeur,
+          }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: userId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Liste paginée (avec le demandeur)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListeDemandes' }
+        '403': { $ref: '#/components/responses/Interdit' }
+  /admin/requests/{id}:
+    get:
+      tags: [Admin — Demandes]
+      summary: Détail avec le stock actuel de chaque matériel
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Demande
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DemandeDetail' }
+        '404': { $ref: '#/components/responses/Introuvable' }
+  /admin/requests/{id}/approve:
+    patch:
+      tags: [Admin — Demandes]
+      summary: Approuve et décrémente le stock (RPC approve_request, transaction + verrous)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { commentaire: { type: string, maxLength: 1000 } } }
+      responses:
+        '200':
+          description: Demande approuvée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DemandeDetail' }
+        '409':
+          description: INVALID_TRANSITION (déjà traitée) ou INSUFFICIENT_STOCK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Erreur' }
+  /admin/requests/{id}/reject:
+    patch:
+      tags: [Admin — Demandes]
+      summary: Refuse avec un motif obligatoire (RPC reject_request)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [commentaire]
+              properties: { commentaire: { type: string, minLength: 1, maxLength: 1000 } }
+      responses:
+        '200':
+          description: Demande refusée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DemandeDetail' }
+        '409': { $ref: '#/components/responses/Conflit' }
+        '422': { $ref: '#/components/responses/Invalide' }
+  /admin/requests/{id}/fulfill:
+    patch:
+      tags: [Admin — Demandes]
+      summary: Marque une demande approuvée comme remise (RPC fulfill_request)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Demande remise
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DemandeDetail' }
+        '409': { $ref: '#/components/responses/Conflit' }
+
+  /admin/materials:
+    get:
+      tags: [Admin — Matériels]
+      summary: Tous les matériels, y compris inactifs
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limite'
+        - { name: search, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string, format: uuid } }
+        - {
+            name: availability,
+            in: query,
+            schema: { type: string, enum: [disponible, stock_faible, indisponible] },
+          }
+        - {
+            name: sort,
+            in: query,
+            schema: { type: string, enum: [nom_asc, nom_desc, stock_desc, recent] },
+          }
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListeMateriels' }
+    post:
+      tags: [Admin — Matériels]
+      summary: Crée un matériel (audit MATERIAL_CREATED)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CorpsMateriel' }
+      responses:
+        '201':
+          description: Créé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Materiel' }
+        '422': { $ref: '#/components/responses/Invalide' }
+  /admin/materials/{id}:
+    get:
+      tags: [Admin — Matériels]
+      summary: Détail (même inactif)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Matériel
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Materiel' }
+        '404': { $ref: '#/components/responses/Introuvable' }
+    put:
+      tags: [Admin — Matériels]
+      summary: Modifie un matériel (audit MATERIAL_UPDATED, STOCK_UPDATED si le stock change)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CorpsMateriel' }
+      responses:
+        '200':
+          description: Modifié
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Materiel' }
+        '404': { $ref: '#/components/responses/Introuvable' }
+        '422': { $ref: '#/components/responses/Invalide' }
+  /admin/materials/{id}/status:
+    patch:
+      tags: [Admin — Matériels]
+      summary: Active / désactive (audit MATERIAL_STATUS_CHANGED)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CorpsStatut' }
+      responses:
+        '200':
+          description: Matériel
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Materiel' }
+  /admin/materials/{id}/image:
+    post:
+      tags: [Admin — Matériels]
+      summary: Téléverse l'image (PNG/JPEG/WebP, 2 Mo max) dans le bucket « materials »
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties: { image: { type: string, format: binary } }
+      responses:
+        '200':
+          description: Matériel avec imageUrl
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Materiel' }
+        '413': { description: Fichier trop volumineux }
+        '422': { $ref: '#/components/responses/Invalide' }
+
+  /admin/categories:
+    get:
+      tags: [Admin — Catégories]
+      summary: Toutes les catégories avec le nombre de matériels
+      responses:
+        '200':
+          description: Catégories
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Categorie' } }
+    post:
+      tags: [Admin — Catégories]
+      summary: Crée une catégorie (audit CATEGORY_CREATED)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CorpsCategorie' }
+      responses:
+        '201':
+          description: Créée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Categorie' }
+        '409': { $ref: '#/components/responses/Conflit' }
+  /admin/categories/{id}:
+    put:
+      tags: [Admin — Catégories]
+      summary: Modifie une catégorie
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CorpsCategorie' }
+      responses:
+        '200':
+          description: Modifiée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Categorie' }
+  /admin/categories/{id}/status:
+    patch:
+      tags: [Admin — Catégories]
+      summary: Active / désactive une catégorie
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CorpsStatut' }
+      responses:
+        '200':
+          description: Catégorie
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Categorie' }
+
+  /admin/audit:
+    get:
+      tags: [Admin — Audit]
+      summary: Journal d'audit (lecture seule)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limite'
+        - { name: action, in: query, schema: { type: string, example: REQUEST_APPROVED } }
+        - {
+            name: entityType,
+            in: query,
+            schema: { type: string, enum: [request, material, category] },
+          }
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Meta'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/Audit' } }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    Page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    Limite: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50 } }
+    Statut:
+      name: status
+      in: query
+      description: Un statut ou plusieurs séparés par des virgules (ex. APPROVED,FULFILLED)
+      schema: { type: string, example: PENDING }
+
+  responses:
+    NonAuthentifie:
+      description: Token absent, invalide ou expiré
+      content: { application/json: { schema: { $ref: '#/components/schemas/Erreur' } } }
+    Interdit:
+      description: Rôle insuffisant ou compte désactivé
+      content: { application/json: { schema: { $ref: '#/components/schemas/Erreur' } } }
+    Introuvable:
+      description: Ressource introuvable
+      content: { application/json: { schema: { $ref: '#/components/schemas/Erreur' } } }
+    Conflit:
+      description: Conflit métier (INVALID_TRANSITION, INSUFFICIENT_STOCK, doublon)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Erreur' } } }
+    Invalide:
+      description: Données invalides (VALIDATION_ERROR ou code métier 422)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Erreur' } } }
+
+  schemas:
+    Erreur:
+      type: object
+      properties:
+        statusCode: { type: integer, example: 409 }
+        code: { type: string, example: INSUFFICIENT_STOCK }
+        message:
+          { type: string, example: 'Stock insuffisant. Écran LG 27" 4K : demandé 2, disponible 0.' }
+        details: {}
+    Meta:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            page: { type: integer }
+            limite: { type: integer }
+            total: { type: integer }
+            totalPages: { type: integer }
+    Profil:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        prenom: { type: string }
+        nom: { type: string }
+        nomComplet: { type: string }
+        role: { type: string, enum: [USER, ADMIN] }
+        actif: { type: boolean }
+    Categorie:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nom: { type: string }
+        description: { type: string, nullable: true }
+        actif: { type: boolean }
+        nombreMateriels: { type: integer }
+        dateCreation: { type: string, format: date-time }
+    Materiel:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nom: { type: string }
+        description: { type: string, nullable: true }
+        categorie:
+          type: object
+          nullable: true
+          properties: { id: { type: string }, nom: { type: string } }
+        imageUrl: { type: string, nullable: true }
+        quantiteTotale: { type: integer }
+        quantiteDisponible: { type: integer }
+        stockMinimum: { type: integer }
+        stockFaible: { type: boolean }
+        disponibilite: { type: string, enum: [disponible, stock_faible, indisponible] }
+        actif: { type: boolean }
+        dateCreation: { type: string, format: date-time }
+        dateMiseAJour: { type: string, format: date-time }
+    ListeMateriels:
+      allOf:
+        - $ref: '#/components/schemas/Meta'
+        - type: object
+          properties:
+            data: { type: array, items: { $ref: '#/components/schemas/Materiel' } }
+    CorpsMateriel:
+      type: object
+      required: [nom, categorieId, quantiteTotale, quantiteDisponible, stockMinimum]
+      properties:
+        nom: { type: string, minLength: 2, maxLength: 150 }
+        description: { type: string, nullable: true, maxLength: 2000 }
+        categorieId: { type: string, format: uuid }
+        quantiteTotale: { type: integer, minimum: 0 }
+        quantiteDisponible: { type: integer, minimum: 0, description: '≤ quantiteTotale' }
+        stockMinimum: { type: integer, minimum: 0 }
+        actif: { type: boolean, default: true }
+    CorpsCategorie:
+      type: object
+      required: [nom]
+      properties:
+        nom: { type: string, minLength: 2, maxLength: 100 }
+        description: { type: string, nullable: true, maxLength: 500 }
+    CorpsStatut:
+      type: object
+      required: [actif]
+      properties: { actif: { type: boolean } }
+    CreationDemande:
+      type: object
+      required: [motif, articles]
+      properties:
+        motif: { type: string, minLength: 10, maxLength: 1000 }
+        articles:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [materielId, quantite]
+            properties:
+              materielId: { type: string, format: uuid }
+              quantite: { type: integer, minimum: 1 }
+    StatutDemande:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED, CANCELLED, FULFILLED]
+    DemandeResume:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        reference: { type: string, example: REQ-2026-000013 }
+        statut: { $ref: '#/components/schemas/StatutDemande' }
+        motif: { type: string }
+        commentaireAdmin: { type: string, nullable: true }
+        nombreArticles: { type: integer }
+        demandeur: { $ref: '#/components/schemas/Profil' }
+        dateCreation: { type: string, format: date-time }
+        dateMiseAJour: { type: string, format: date-time }
+    ListeDemandes:
+      allOf:
+        - $ref: '#/components/schemas/Meta'
+        - type: object
+          properties:
+            data: { type: array, items: { $ref: '#/components/schemas/DemandeResume' } }
+    DemandeDetail:
+      allOf:
+        - $ref: '#/components/schemas/DemandeResume'
+        - type: object
+          properties:
+            nombreDemandesDemandeur: { type: integer, description: Admin uniquement }
+            articles:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string }
+                  quantite: { type: integer }
+                  materiel:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      nom: { type: string }
+                      categorie: { type: string, nullable: true }
+                      imageUrl: { type: string, nullable: true }
+                      quantiteDisponible: { type: integer, description: Admin uniquement }
+                      actif: { type: boolean, description: Admin uniquement }
+            historique:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string }
+                  ancienStatut:
+                    { allOf: [{ $ref: '#/components/schemas/StatutDemande' }], nullable: true }
+                  nouveauStatut: { $ref: '#/components/schemas/StatutDemande' }
+                  commentaire: { type: string, nullable: true }
+                  auteur:
+                    type: object
+                    nullable: true
+                    properties:
+                      { id: { type: string }, nomComplet: { type: string }, role: { type: string } }
+                  date: { type: string, format: date-time }
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        titre: { type: string }
+        message: { type: string }
+        type: { type: string, enum: [REQUEST_APPROVED, REQUEST_REJECTED, REQUEST_FULFILLED] }
+        demandeId: { type: string, nullable: true }
+        lue: { type: boolean }
+        dateLecture: { type: string, nullable: true }
+        dateCreation: { type: string, format: date-time }
+    Audit:
+      type: object
+      properties:
+        id: { type: string }
+        action: { type: string }
+        typeEntite: { type: string }
+        idEntite: { type: string, nullable: true }
+        metadonnees: { type: object }
+        acteur:
+          type: object
+          nullable: true
+          properties:
+            { id: { type: string }, nomComplet: { type: string }, email: { type: string } }
+        date: { type: string, format: date-time }
+    StatsUtilisateur:
+      type: object
+      properties:
+        total: { type: integer }
+        enAttente: { type: integer }
+        approuvees: { type: integer }
+        refusees: { type: integer }
+        annulees: { type: integer }
+        remises: { type: integer }
+    StatsAdmin:
+      type: object
+      properties:
+        enAttente: { type: integer }
+        aujourdhui: { type: integer }
+        approuvees: { type: integer }
+        refusees: { type: integer }
+        remises: { type: integer }
+        materielsActifs: { type: integer }
+        materielsStockFaible: { type: integer }
+        parStatut: { type: object, additionalProperties: { type: integer } }
+        quatorzeDerniersJours:
+          type: array
+          items:
+            {
+              type: object,
+              properties: { date: { type: string, format: date }, nombre: { type: integer } },
+            }
+        topMateriels:
+          type: array
+          items:
+            {
+              type: object,
+              properties:
+                { id: { type: string }, nom: { type: string }, totalDemande: { type: integer } },
+            }
