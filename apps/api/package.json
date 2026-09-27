@@ -1,0 +1,19 @@
+{
+  "name": "api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "API REST IT Request Manager (tier métier) — Express 5, Supabase service_role.",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed:demo": "node scripts/seed-demo.js"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.0",
+    "vitest": "^5.0.2"
+  }
+}

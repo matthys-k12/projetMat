@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+*.log
+
+# Secrets : jamais dans git (voir les fichiers .env.example)
+.env
+.env.*
+!.env.example
+
+.DS_Store
+.vscode/
+.idea/
