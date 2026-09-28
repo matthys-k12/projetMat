@@ -27,3 +27,4 @@ export const useCreerUtilisateur = () => useEcritureUtilisateur(api.creerUtilisa
 export const useChangerStatutUtilisateur = () =>
   useEcritureUtilisateur(api.changerStatutUtilisateur);
 export const useChangerRoleUtilisateur = () => useEcritureUtilisateur(api.changerRoleUtilisateur);
+export const useReinitialiserMotDePasse = () => useEcritureUtilisateur(api.reinitialiserMotDePasse);

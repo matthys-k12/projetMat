@@ -75,6 +75,10 @@ Exécutez ensuite `supabase/seed.sql` dans le **SQL Editor** de Supabase : il aj
 
 > **Important — désactiver les inscriptions libres.** Dans Supabase, allez dans *Authentication → Sign In / Providers* et désactivez « Allow new users to sign up ». Dans une organisation, c'est l'organisation qui attribue les accès : personne ne doit pouvoir se créer un compte seul.
 
+> **Mot de passe oublié — deux réglages.**
+> 1. *Authentication → URL Configuration* : ajoutez `http://localhost:5173/reset-password` dans **Redirect URLs** (sinon Supabase refuse de renvoyer vers le site).
+> 2. *Authentication → Emails → SMTP Settings* : sans serveur SMTP personnalisé, Supabase n'envoie des e-mails qu'aux adresses des membres de l'équipe du projet, et seulement quelques-uns par heure. En entreprise, on branche le SMTP de l'organisation. En attendant, l'administrateur peut toujours réinitialiser un mot de passe depuis **Administration → Utilisateurs**.
+
 ### Étape 3 — Configurer les variables d'environnement
 
 ```bash
@@ -281,6 +285,18 @@ Dans une organisation, c'est l'organisation qui attribue les accès. Il n'y a do
 
 Désactiver un compte (départ d'un collaborateur) agit à deux niveaux : l'API refuse ses requêtes, et Supabase refuse sa connexion. Ses demandes et son historique sont conservés. Un administrateur ne peut ni se désactiver ni se retirer son propre rôle : cela évite de bloquer l'organisation.
 
+### Mot de passe oublié : deux chemins
+
+**1. Seul, par e-mail** (lien « Mot de passe oublié ? » sur la page de connexion) :
+
+1. Le collaborateur saisit son adresse. L'API (`POST /auth/password/forgot`, seule route publique avec `/health`) demande à Supabase Auth d'envoyer un e-mail contenant un lien à usage unique, valable 1 heure.
+2. Le lien ouvre `/reset-password` avec une session de récupération. Le collaborateur choisit son nouveau mot de passe (mêmes règles que plus haut), envoyé à `POST /auth/password`.
+3. Toutes ses autres sessions sont alors fermées : si quelqu'un avait volé l'ancien mot de passe, il est déconnecté.
+
+La réponse est **toujours la même**, que l'adresse ait un compte ou non : la page ne permet pas de deviner qui travaille dans l'entreprise. Un compte désactivé ne reçoit rien, et une même adresse ne peut recevoir qu'un e-mail par minute.
+
+**2. Par l'administrateur** (bouton « Réinitialiser » dans **Administration → Utilisateurs**), si l'e-mail n'arrive pas : même mécanisme que la création. Un nouveau mot de passe temporaire est affiché une seule fois, et le collaborateur doit le remplacer à sa prochaine connexion. L'admin ne connaît donc toujours pas le mot de passe définitif.
+
 ### Une demande d'un autre collaborateur est « introuvable »
 
 Si un collaborateur tente d'ouvrir la demande d'un collègue, l'API répond **404 (introuvable)** et non 403 (interdit). Ainsi, on ne révèle même pas que la demande existe.
@@ -295,13 +311,14 @@ Les colonnes de la base restent en anglais (`available_quantity`). L'API les con
 
 Documentation complète et interactive : **http://localhost:3000/api/docs**
 
-Toutes les routes commencent par `/api/v1` et demandent d'être connecté, sauf `/health`.
+Toutes les routes commencent par `/api/v1` et demandent d'être connecté, sauf `/health` et `/auth/password/forgot`.
 
 | Méthode | Route | Qui | À quoi ça sert |
 |---|---|---|---|
 | GET | `/health` | tout le monde | vérifier que l'API fonctionne |
 | GET | `/auth/me` | connecté | récupérer son profil, son rôle, et s'il doit changer son mot de passe |
-| POST | `/auth/password` | connecté | choisir son mot de passe (remplace le temporaire) |
+| POST | `/auth/password` | connecté | choisir son mot de passe (remplace le temporaire, ou fin du mot de passe oublié) |
+| POST | `/auth/password/forgot` | tout le monde | recevoir un lien de réinitialisation par e-mail |
 | GET | `/materials`, `/materials/:id` | connecté | catalogue (matériel actif uniquement) |
 | GET | `/categories` | connecté | catégories pour les filtres |
 | POST | `/requests` | connecté | créer une demande |
@@ -316,6 +333,7 @@ Toutes les routes commencent par `/api/v1` et demandent d'être connecté, sauf 
 | GET | `/admin/users` | admin | liste des comptes |
 | POST | `/admin/users` | admin | créer un compte (renvoie le mot de passe temporaire une seule fois) |
 | PATCH | `/admin/users/:id/status`, `/admin/users/:id/role` | admin | désactiver / réactiver, changer le rôle |
+| POST | `/admin/users/:id/password-reset` | admin | nouveau mot de passe temporaire (affiché une seule fois) |
 | GET | `/admin/dashboard`, `/admin/audit` | admin | statistiques, journal |
 
 **Format des réponses :**
@@ -336,19 +354,20 @@ Toutes les routes commencent par `/api/v1` et demandent d'être connecté, sauf 
 npm test
 ```
 
-**API — 82 tests :**
+**API — 92 tests :**
 - les 25 transitions de statut possibles et impossibles ;
 - la traduction des erreurs de la base en messages clairs et en codes HTTP ;
 - la validation des données (demande vide, quantité à zéro…) ;
 - la sécurité : sans connexion → 401, collaborateur sur une route admin → 403 ;
 - l'approbation avec un stock insuffisant → 409 ;
-- la gestion des comptes : mot de passe temporaire fort et unique, absent du journal d'audit, routes bloquées tant qu'il n'est pas changé, un admin ne peut pas se désactiver lui-même.
+- la gestion des comptes : mot de passe temporaire fort et unique, absent du journal d'audit, routes bloquées tant qu'il n'est pas changé, un admin ne peut pas se désactiver lui-même ;
+- le mot de passe oublié : même réponse pour une adresse inconnue, rien envoyé à un compte désactivé, un e-mail par minute au plus, autres sessions fermées après le changement, réinitialisation par l'admin.
 
-**Site web — 23 tests :**
+**Site web — 26 tests :**
 - affichage des statuts en français ;
 - règles du formulaire de nouvelle demande ;
 - validation du formulaire de connexion ;
-- règles du nouveau mot de passe.
+- règles du nouveau mot de passe et du formulaire « mot de passe oublié ».
 
 Le parcours complet (collaborateur puis admin, sur ordinateur et sur mobile) a aussi été vérifié à la main dans Chrome, sans aucune erreur dans la console.
 
@@ -360,7 +379,7 @@ Le parcours complet (collaborateur puis admin, sur ordinateur et sur mobile) a a
 
 - **Écart entre la base déployée et les fichiers de migration.** Sur le projet Supabase utilisé, certaines fonctions ont un nom ou un format de réponse légèrement différent de ceux décrits dans `supabase/migrations/`. L'API gère les deux cas (c'est expliqué en commentaire dans le code), mais il faudrait réaligner les fichiers de migration sur la base réelle.
 - **L'audit des modifications de matériel n'est pas atomique.** Modifier un matériel et écrire la ligne d'audit se font en deux requêtes séparées. Une fonction SQL dédiée garantirait le « tout ou rien ».
-- **Mot de passe oublié** : pas encore de réinitialisation. Il faudrait une action admin qui régénère un mot de passe temporaire (même mécanisme que la création).
+- **Limite d'envoi des e-mails « mot de passe oublié »** : elle est gardée en mémoire du serveur. Avec plusieurs serveurs, il faudrait la partager (Redis ou table SQL). Supabase applique de toute façon ses propres limites.
 - Le formulaire de nouvelle demande propose au maximum 50 matériels.
 
 ### Évolutions possibles

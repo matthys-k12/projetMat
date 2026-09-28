@@ -39,3 +39,12 @@ export function changerStatutUtilisateur({ id, actif }) {
 export function changerRoleUtilisateur({ id, role }) {
   return appelerApi(`/admin/users/${id}/role`, { methode: 'PATCH', corps: { role } });
 }
+
+/**
+ * Nouveau mot de passe temporaire (collaborateur qui a oublié le sien).
+ * @param {string} id
+ * @returns {Promise<{ utilisateur: Utilisateur, motDePasseTemporaire: string }>}
+ */
+export function reinitialiserMotDePasse(id) {
+  return appelerApi(`/admin/users/${id}/password-reset`, { methode: 'POST' });
+}

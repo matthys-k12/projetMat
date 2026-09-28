@@ -74,6 +74,8 @@ paths:
         Règles : 10 caractères minimum, une majuscule, un chiffre, différent du mot de passe actuel.
         Tant que `doitChangerMotDePasse` est vrai, toutes les autres routes (sauf /auth/me et
         /auth/logout) répondent 403 PASSWORD_CHANGE_REQUIRED.
+        Sert aussi à la fin du mot de passe oublié (token de la session de récupération).
+        Les autres sessions de l'utilisateur sont révoquées ; la session courante est conservée.
       requestBody:
         required: true
         content:
@@ -88,6 +90,31 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Profil' }
+        '422': { $ref: '#/components/responses/Invalide' }
+  /auth/password/forgot:
+    post:
+      tags: [Authentification]
+      summary: Mot de passe oublié — envoie un lien de réinitialisation (route publique)
+      security: []
+      description: |
+        Aucun token requis. Réponse 202 identique que l'adresse ait un compte ou non (pas
+        d'énumération des comptes). Rien n'est envoyé à un compte désactivé. Au plus un e-mail
+        par minute et par adresse. Le lien (Supabase Auth) ramène sur WEB_URL/reset-password,
+        où le front appelle POST /auth/password avec le token de récupération.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties: { email: { type: string, format: email } }
+      responses:
+        '202':
+          description: Demande prise en compte
+          content:
+            application/json:
+              schema: { type: object, properties: { message: { type: string } } }
         '422': { $ref: '#/components/responses/Invalide' }
 
   /materials:
@@ -645,6 +672,27 @@ paths:
               schema: { $ref: '#/components/schemas/Profil' }
         '409':
           { description: SELF_LOCKOUT — un admin ne peut pas se retirer son propre rôle ADMIN }
+  /admin/users/{id}/password-reset:
+    post:
+      tags: [Admin — Utilisateurs]
+      summary: Réinitialise le mot de passe (nouveau mot de passe temporaire, sans e-mail)
+      description: |
+        Même mécanisme que la création : mot de passe temporaire renvoyé une seule fois,
+        `doitChangerMotDePasse` repasse à vrai. Audit USER_PASSWORD_RESET (sans le mot de passe).
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Nouveau mot de passe temporaire
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  utilisateur: { $ref: '#/components/schemas/Profil' }
+                  motDePasseTemporaire: { type: string, example: 'k7#Rv2mQ-xW9pLt4' }
+        '404': { $ref: '#/components/responses/Introuvable' }
+        '409':
+          description: SELF_PASSWORD_RESET (son propre compte) ou USER_INACTIVE (compte désactivé)
 
 components:
   securitySchemes:

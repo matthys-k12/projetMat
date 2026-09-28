@@ -21,3 +21,12 @@ export function revoquerSession() {
 export function changerMotDePasse(nouveauMotDePasse) {
   return appelerApi('/auth/password', { methode: 'POST', corps: { nouveauMotDePasse } });
 }
+
+/**
+ * POST /auth/password/forgot — route publique : l'API fait envoyer un lien de réinitialisation.
+ * La réponse est la même que l'adresse ait un compte ou non.
+ * @param {string} email
+ */
+export function demanderReinitialisation(email) {
+  return appelerApi('/auth/password/forgot', { methode: 'POST', corps: { email } });
+}

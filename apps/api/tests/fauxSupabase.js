@@ -88,6 +88,7 @@ export const fauxSupabase = {
       if (!user) return { data: { user: null }, error: { message: 'invalid JWT' } };
       return { data: { user }, error: null };
     }),
+    resetPasswordForEmail: vi.fn(async () => ({ data: {}, error: null })),
     admin: {
       signOut: vi.fn(async () => ({ error: null })),
       createUser: vi.fn(async () => ({ data: { user: { id: 'nouvel-id' } }, error: null })),

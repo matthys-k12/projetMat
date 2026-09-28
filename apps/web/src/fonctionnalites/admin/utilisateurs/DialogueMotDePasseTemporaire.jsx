@@ -20,9 +20,10 @@ import {
 import { Alerte } from '@/components/communs/Carte';
 
 /**
- * @param {{ resultat: { utilisateur: import('./api').Utilisateur, motDePasseTemporaire: string }|null, surFermer: () => void }} props
+ * @param {{ resultat: { utilisateur: import('./api').Utilisateur, motDePasseTemporaire: string }|null, surFermer: () => void, reinitialisation?: boolean }} props
+ *   reinitialisation : true après « Réinitialiser le mot de passe » (sinon : création de compte)
  */
-export function DialogueMotDePasseTemporaire({ resultat, surFermer }) {
+export function DialogueMotDePasseTemporaire({ resultat, surFermer, reinitialisation = false }) {
   const [copie, setCopie] = useState(false);
 
   async function copier() {
@@ -44,10 +45,13 @@ export function DialogueMotDePasseTemporaire({ resultat, surFermer }) {
     <Dialog open={Boolean(resultat)} onOpenChange={(etat) => !etat && fermer()}>
       <DialogContent className="max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Compte créé</DialogTitle>
+          <DialogTitle>
+            {reinitialisation ? 'Mot de passe réinitialisé' : 'Compte créé'}
+          </DialogTitle>
           <DialogDescription>
             Transmettez ce mot de passe temporaire à {resultat?.utilisateur.nomComplet} (
-            {resultat?.utilisateur.email}). Il devra le remplacer à sa première connexion.
+            {resultat?.utilisateur.email}). Il devra le remplacer à sa{' '}
+            {reinitialisation ? 'prochaine' : 'première'} connexion.
           </DialogDescription>
         </DialogHeader>
 

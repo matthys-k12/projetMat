@@ -23,7 +23,7 @@ import { exigerRole } from './middlewares/autorisation.js';
 import { gestionErreurs, routeIntrouvable } from './middlewares/gestionErreurs.js';
 
 import { routesSante } from './modules/sante/sante.routes.js';
-import { routesAuth } from './modules/auth/auth.routes.js';
+import { routesAuth, routesAuthPubliques } from './modules/auth/auth.routes.js';
 import { routesAdminMateriels, routesMateriels } from './modules/materiels/materiels.routes.js';
 import { routesAdminCategories, routesCategories } from './modules/categories/categories.routes.js';
 import { routesAdminDemandes, routesDemandes } from './modules/demandes/demandes.routes.js';
@@ -70,6 +70,8 @@ function creerRoutesApi() {
 
   // Public : déclaré AVANT le middleware d'authentification
   api.use('/health', routesSante);
+  // Mot de passe oublié : l'utilisateur n'a pas de session, donc pas de token
+  api.use('/auth', routesAuthPubliques);
 
   // Tout ce qui suit exige un token valide
   api.use(authentifier);

@@ -13,6 +13,9 @@ export const schemaConnexion = z.object({
   motDePasse: z.string().min(1, { message: 'Le mot de passe est obligatoire.' }),
 });
 
+/** Mot de passe oublié : seule l'adresse e-mail est demandée. */
+export const schemaMotDePasseOublie = schemaConnexion.pick({ email: true });
+
 /**
  * Changement de mot de passe : mêmes règles que l'API (10 caractères minimum,
  * une majuscule, un chiffre) + confirmation identique.

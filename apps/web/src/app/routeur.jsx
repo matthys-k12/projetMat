@@ -2,7 +2,7 @@
  * Toutes les routes de l'application et leurs gardes.
  *
  * Tier : présentation.
- * - Publique : /login
+ * - Publiques : /login, /forgot-password, /reset-password (arrivée du lien reçu par e-mail)
  * - Connecté (GardeConnexion) : tableau de bord, catalogue, demandes, notifications, profil,
  *   /change-password (forcée tant que le mot de passe temporaire n'est pas remplacé)
  * - ADMIN (GardeAdmin, confort visuel — l'API protège réellement /admin) : /admin/*
@@ -16,6 +16,8 @@ import { GardeConnexion } from '@/fonctionnalites/auth/GardeConnexion';
 import { GardeAdmin } from '@/fonctionnalites/auth/GardeAdmin';
 import { PageConnexion } from '@/fonctionnalites/auth/PageConnexion';
 import { PageChangementMotDePasse } from '@/fonctionnalites/auth/PageChangementMotDePasse';
+import { PageMotDePasseOublie } from '@/fonctionnalites/auth/PageMotDePasseOublie';
+import { PageReinitialisationMotDePasse } from '@/fonctionnalites/auth/PageReinitialisationMotDePasse';
 import { PageTableauDeBord } from '@/fonctionnalites/tableauDeBord/PageTableauDeBord';
 import { PageCatalogue } from '@/fonctionnalites/materiels/PageCatalogue';
 import { PageDetailMateriel } from '@/fonctionnalites/materiels/PageDetailMateriel';
@@ -75,6 +77,8 @@ export function Routeur() {
       <Routes>
         <Route element={<MiseEnPageAuth />}>
           <Route path="/login" element={<PageConnexion />} />
+          <Route path="/forgot-password" element={<PageMotDePasseOublie />} />
+          <Route path="/reset-password" element={<PageReinitialisationMotDePasse />} />
         </Route>
 
         <Route element={<GardeConnexion />}>

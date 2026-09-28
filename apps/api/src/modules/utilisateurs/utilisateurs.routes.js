@@ -28,3 +28,8 @@ routesAdminUtilisateurs.patch(
   valider({ params: schemaParamsId, body: schemaRoleUtilisateur }),
   controleur.changerRole,
 );
+routesAdminUtilisateurs.post(
+  '/:id/password-reset',
+  valider({ params: schemaParamsId }),
+  controleur.reinitialiserMotDePasse,
+);

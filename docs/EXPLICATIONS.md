@@ -151,6 +151,37 @@ journal d'audit est attribuable au titulaire du compte, pas à l'admin qui l'a c
 ni se désactiver ni se retirer le rôle ADMIN (**409 `SELF_LOCKOUT`**) : sinon le dernier admin
 pourrait bloquer toute l'organisation.
 
+### Mot de passe oublié
+
+**Chemin 1 : seul, par e-mail.**
+1. **`PageMotDePasseOublie.jsx`** (`/forgot-password`, page publique) → `POST /auth/password/forgot`.
+   Cette route est montée dans `app.js` **avant** `authentifier` (via `routesAuthPubliques`),
+   puisque l'utilisateur n'a pas de session.
+2. **`auth.service.js` → `demanderReinitialisation()`** :
+   - au plus un e-mail par minute et par adresse (une `Map` en mémoire) ;
+   - rien n'est envoyé si l'adresse est inconnue ou le compte désactivé ;
+   - sinon `supabase.auth.resetPasswordForEmail(email, { redirectTo: WEB_URL/reset-password })`,
+     puis audit `PASSWORD_RESET_REQUESTED`.
+   Le contrôleur répond **toujours 202 avec le même message** : impossible de deviner qui a un
+   compte (pas d'énumération des utilisateurs).
+3. Le lien de l'e-mail passe par Supabase, qui renvoie sur `/reset-password#access_token=…&type=recovery`.
+   Le SDK Supabase du navigateur lit ce fragment tout seul et ouvre une **session de récupération**.
+4. **`PageReinitialisationMotDePasse.jsx`** affiche `FormulaireNouveauMotDePasse.jsx` (le même
+   que `/change-password`), qui appelle `POST /auth/password` avec ce token : mêmes règles, même
+   service. Lien expiré : Supabase renvoie `#error_code=otp_expired`, la page propose un nouveau lien.
+5. Après tout changement de mot de passe, `auth.admin.signOut(token, 'others')` **ferme les autres
+   sessions** : si l'ancien mot de passe avait fuité, l'intrus est déconnecté.
+
+**Chemin 2 : par l'admin** (si l'e-mail n'arrive pas). Bouton « Réinitialiser » dans
+`TableauUtilisateurs.jsx` → `POST /admin/users/:id/password-reset` → `reinitialiserMotDePasse()` :
+nouveau mot de passe temporaire, `must_change_password = true`, audit `USER_PASSWORD_RESET` sans le
+mot de passe. C'est exactement le circuit de la création. Interdit sur son propre compte
+(409 `SELF_PASSWORD_RESET`) et sur un compte désactivé (409 `USER_INACTIVE`).
+
+**Réglages Supabase** : l'URL `/reset-password` doit figurer dans *Redirect URLs*. Sans SMTP
+personnalisé, Supabase n'envoie qu'aux membres de l'équipe du projet, et quelques e-mails par heure
+seulement. D'où le chemin 2, qui marche sans e-mail.
+
 **Évolution naturelle : le SSO** (Microsoft Entra ID / Google Workspace, SAML ou OIDC, supporté
 par Supabase). Plus aucun mot de passe dans l'application, et le départ d'un salarié coupe ses
 accès automatiquement.
@@ -237,3 +268,11 @@ supabase/migrations      schéma, fonctions RPC, sécurité (RLS)
 12. **Pourquoi pas de page « Créer un compte » ?**
     Dans une organisation, les accès sont attribués, pas demandés. Les inscriptions sont aussi
     coupées dans Supabase, sinon n'importe qui pourrait appeler `signUp` avec la clé publique.
+
+13. **Pourquoi « mot de passe oublié » répond-il pareil si l'adresse n'existe pas ?**
+    Sinon, la page servirait à tester des adresses et à dresser la liste des salariés qui ont un
+    compte. Le message est donc le même dans tous les cas.
+
+14. **Pourquoi passer par l'API plutôt qu'appeler `resetPasswordForEmail` depuis le navigateur ?**
+    Pour garder les règles côté serveur : aucun envoi à un compte désactivé, limite d'envoi,
+    trace dans l'audit. Le front n'utilise le SDK Supabase que pour la session.

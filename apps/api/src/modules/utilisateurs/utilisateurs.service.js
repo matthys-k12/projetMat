@@ -1,5 +1,6 @@
 /**
- * Service de gestion des comptes (ADMIN) : liste, création, activation, rôle.
+ * Service de gestion des comptes (ADMIN) : liste, création, activation, rôle,
+ * réinitialisation du mot de passe.
  *
  * Tier : métier → données (Supabase Auth admin + table profiles).
  *
@@ -203,4 +204,48 @@ export async function changerRoleUtilisateur(acteurId, id, role) {
     apres: role,
   });
   return versUtilisateurApi(data);
+}
+
+/**
+ * Réinitialisation par l'admin (mot de passe oublié, sans e-mail) : même mécanisme
+ * que la création. Nouveau mot de passe temporaire affiché une seule fois, et
+ * obligation de le remplacer à la prochaine connexion. Les sessions déjà ouvertes
+ * du compte sont bloquées par l'API (403 PASSWORD_CHANGE_REQUIRED) jusqu'au changement.
+ * @param {string} acteurId
+ * @param {string} id
+ * @returns {Promise<{ utilisateur: object, motDePasseTemporaire: string }>}
+ * @throws {ErreurApi} 409 sur son propre compte ou sur un compte désactivé
+ */
+export async function reinitialiserMotDePasse(acteurId, id) {
+  if (id === acteurId) {
+    throw new ErreurApi(
+      409,
+      'SELF_PASSWORD_RESET',
+      'Pour votre propre compte, utilisez « Changer mon mot de passe » dans votre profil.',
+    );
+  }
+  const avant = await lireProfilOu404(id);
+  if (!avant.active) {
+    throw new ErreurApi(409, 'USER_INACTIVE', "Réactivez d'abord ce compte.");
+  }
+
+  const motDePasseTemporaire = genererMotDePasseTemporaire();
+  const { error: erreurAuth } = await supabase.auth.admin.updateUserById(id, {
+    password: motDePasseTemporaire,
+  });
+  if (erreurAuth) {
+    throw new ErreurApi(502, 'AUTH_ERROR', "Le mot de passe n'a pas pu être réinitialisé.");
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ must_change_password: true })
+    .eq('id', id)
+    .select(COLONNES)
+    .single();
+  if (error) throw error;
+
+  // Jamais de mot de passe dans l'audit ni dans les logs
+  await enregistrerAudit(acteurId, 'USER_PASSWORD_RESET', 'user', id, { email: avant.email });
+  return { utilisateur: versUtilisateurApi(data), motDePasseTemporaire };
 }

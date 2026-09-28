@@ -41,3 +41,12 @@ export async function changerRole(req, res) {
   const { id } = req.donnees.params;
   res.json(await service.changerRoleUtilisateur(req.utilisateur.id, id, req.donnees.body.role));
 }
+
+/**
+ * POST /admin/users/:id/password-reset — nouveau mot de passe temporaire (affiché une seule fois).
+ * @type {import('express').RequestHandler}
+ */
+export async function reinitialiserMotDePasse(req, res) {
+  res.set('Cache-Control', 'no-store');
+  res.json(await service.reinitialiserMotDePasse(req.utilisateur.id, req.donnees.params.id));
+}

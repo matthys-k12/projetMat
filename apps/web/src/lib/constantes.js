@@ -103,6 +103,8 @@ export const ACTIONS_AUDIT = {
   USER_STATUS_CHANGED: 'Statut du compte modifié',
   USER_ROLE_CHANGED: 'Rôle modifié',
   PASSWORD_CHANGED: 'Mot de passe changé',
+  PASSWORD_RESET_REQUESTED: 'Lien de réinitialisation envoyé',
+  USER_PASSWORD_RESET: 'Mot de passe réinitialisé par un admin',
 };
 
 /** Libellés des types de ressource du journal d'audit. */

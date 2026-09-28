@@ -32,6 +32,21 @@ export async function changerMotDePasse(req, res) {
   const profil = await serviceAuth.changerMotDePasse(
     req.utilisateur,
     req.donnees.body.nouveauMotDePasse,
+    extraireToken(req.headers.authorization),
   );
   res.json(profil);
+}
+
+/**
+ * POST /auth/password/forgot — route PUBLIQUE : fait envoyer un lien de réinitialisation.
+ * Réponse identique que le compte existe ou non (202) : on ne révèle pas quelles
+ * adresses ont un compte (énumération d'utilisateurs).
+ * @type {import('express').RequestHandler}
+ */
+export async function demanderReinitialisation(req, res) {
+  await serviceAuth.demanderReinitialisation(req.donnees.body.email);
+  res.status(202).json({
+    message:
+      'Si un compte actif correspond à cette adresse, un e-mail de réinitialisation vient d’être envoyé.',
+  });
 }

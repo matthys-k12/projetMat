@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, CircleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,6 +104,13 @@ export function PageConnexion() {
             </div>
           )}
         </ChampFormulaire>
+
+        <Link
+          to="/forgot-password"
+          className="-mt-1 self-end text-small font-medium text-primary hover:underline"
+        >
+          Mot de passe oublié ?
+        </Link>
 
         <Button type="submit" className="h-11 w-full lg:h-9" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="animate-spin" aria-hidden="true" />}

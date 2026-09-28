@@ -1,11 +1,15 @@
 /**
- * Tableau des comptes : identité, rôle (modifiable), statut (interrupteur avec confirmation).
+ * Tableau des comptes : identité, rôle (modifiable), statut (interrupteur avec confirmation),
+ * réinitialisation du mot de passe (nouveau mot de passe temporaire, affiché une seule fois).
  *
- * Tier : présentation. Sur sa propre ligne, l'admin ne peut ni se désactiver ni changer
- * son rôle : les contrôles sont désactivés (l'API le refuse de toute façon, 409).
+ * Tier : présentation. Sur sa propre ligne, l'admin ne peut ni se désactiver, ni changer
+ * son rôle, ni réinitialiser son mot de passe : les contrôles sont désactivés (l'API le
+ * refuse de toute façon, 409).
  */
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { KeyRound } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
   Select,
@@ -28,7 +32,12 @@ import { Avatar } from '@/components/communs/Avatar';
 import { Pastille } from '@/components/communs/BadgeStatut';
 import { formaterDate } from '@/lib/formatage';
 import { useAuth } from '@/fonctionnalites/auth/useAuth';
-import { useChangerRoleUtilisateur, useChangerStatutUtilisateur } from './hooks';
+import {
+  useChangerRoleUtilisateur,
+  useChangerStatutUtilisateur,
+  useReinitialiserMotDePasse,
+} from './hooks';
+import { DialogueMotDePasseTemporaire } from './DialogueMotDePasseTemporaire';
 
 const TH =
   'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
@@ -47,8 +56,13 @@ export function TableauUtilisateurs({ utilisateurs }) {
   const { profil } = useAuth();
   const statut = useChangerStatutUtilisateur();
   const role = useChangerRoleUtilisateur();
+  const reinitialisation = useReinitialiserMotDePasse();
   // Compte dont on demande confirmation avant de changer le statut
   const [aConfirmer, setAConfirmer] = useState(null);
+  // Compte dont on demande confirmation avant de réinitialiser le mot de passe
+  const [aReinitialiser, setAReinitialiser] = useState(null);
+  // Résultat de la réinitialisation : mot de passe temporaire à afficher une seule fois
+  const [nouveauMotDePasse, setNouveauMotDePasse] = useState(null);
 
   async function confirmerStatut() {
     const { utilisateur, actif } = aConfirmer;
@@ -59,6 +73,15 @@ export function TableauUtilisateurs({ utilisateurs }) {
       toast.error(erreur.message);
     }
     setAConfirmer(null);
+  }
+
+  async function confirmerReinitialisation() {
+    try {
+      setNouveauMotDePasse(await reinitialisation.mutateAsync(aReinitialiser.id));
+    } catch (erreur) {
+      toast.error(erreur.message);
+    }
+    setAReinitialiser(null);
   }
 
   async function changerRole(utilisateur, nouveauRole) {
@@ -74,13 +97,16 @@ export function TableauUtilisateurs({ utilisateurs }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[760px]">
+      <table className="w-full min-w-[900px]">
         <thead>
           <tr>
             <th className={TH}>Collaborateur</th>
             <th className={TH}>Rôle</th>
             <th className={TH}>Créé le</th>
             <th className={TH}>Statut</th>
+            <th className={TH}>
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -133,6 +159,17 @@ export function TableauUtilisateurs({ utilisateurs }) {
                     <span className="text-small">{u.actif ? 'Actif' : 'Désactivé'}</span>
                   </span>
                 </td>
+                <td className={`${TD} text-right`}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={moi || !u.actif || reinitialisation.isPending}
+                    onClick={() => setAReinitialiser(u)}
+                    aria-label={`Réinitialiser le mot de passe de ${u.nomComplet}`}
+                  >
+                    <KeyRound aria-hidden="true" /> Réinitialiser
+                  </Button>
+                </td>
               </tr>
             );
           })}
@@ -160,6 +197,35 @@ export function TableauUtilisateurs({ utilisateurs }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(aReinitialiser)}
+        onOpenChange={(etat) => !etat && setAReinitialiser(null)}
+      >
+        <AlertDialogContent className="max-w-[440px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Réinitialiser le mot de passe de {aReinitialiser?.nomComplet} ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Son mot de passe actuel cessera de fonctionner. Un mot de passe temporaire vous
+              sera affiché une seule fois ; il devra le remplacer à sa prochaine connexion.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmerReinitialisation}>
+              Réinitialiser le mot de passe
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <DialogueMotDePasseTemporaire
+        reinitialisation
+        resultat={nouveauMotDePasse}
+        surFermer={() => setNouveauMotDePasse(null)}
+      />
     </div>
   );
 }
