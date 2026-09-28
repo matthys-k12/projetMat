@@ -26,7 +26,15 @@ import { useApprouverDemande, useRemettreDemande } from './hooks';
  * Confirmation générique : bouton déclencheur + AlertDialog, reste ouvert pendant l'envoi.
  * @param {{ declencheur: import('react').ReactNode, titre: string, description: string, libelleConfirmation: string, enCours: boolean, surConfirmer: () => Promise<boolean>, children?: import('react').ReactNode }} props
  */
-function Confirmation({ declencheur, titre, description, libelleConfirmation, enCours, surConfirmer, children }) {
+function Confirmation({
+  declencheur,
+  titre,
+  description,
+  libelleConfirmation,
+  enCours,
+  surConfirmer,
+  children,
+}) {
   const [ouvert, setOuvert] = useState(false);
   async function confirmer() {
     const reussi = await surConfirmer();
@@ -85,7 +93,10 @@ export function ActionsDecision({ demande, stockInsuffisant }) {
         <DialogueRefus demande={demande} />
         <Confirmation
           declencheur={
-            <Button className="h-11 flex-1 sm:h-9 sm:flex-none" aria-describedby={stockInsuffisant ? "alerte-stock" : undefined}>
+            <Button
+              className="h-11 flex-1 sm:h-9 sm:flex-none"
+              aria-describedby={stockInsuffisant ? 'alerte-stock' : undefined}
+            >
               <Check aria-hidden="true" /> Approuver
             </Button>
           }
@@ -95,7 +106,10 @@ export function ActionsDecision({ demande, stockInsuffisant }) {
           enCours={approbation.isPending}
           surConfirmer={() =>
             executer(
-              approbation.mutateAsync({ id: demande.id, commentaire: commentaire.trim() || undefined }),
+              approbation.mutateAsync({
+                id: demande.id,
+                commentaire: commentaire.trim() || undefined,
+              }),
               `Demande ${demande.reference} approuvée`,
             )
           }
@@ -128,7 +142,9 @@ export function ActionsDecision({ demande, stockInsuffisant }) {
         description="Confirmez que le matériel a bien été remis au demandeur."
         libelleConfirmation="Confirmer la remise"
         enCours={remise.isPending}
-        surConfirmer={() => executer(remise.mutateAsync({ id: demande.id }), `Demande ${demande.reference} remise`)}
+        surConfirmer={() =>
+          executer(remise.mutateAsync({ id: demande.id }), `Demande ${demande.reference} remise`)
+        }
       />
     );
   }

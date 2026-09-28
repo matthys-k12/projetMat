@@ -29,7 +29,10 @@ const schemaCategorie = z.object({
     .trim()
     .min(2, { message: 'Le nom doit contenir au moins 2 caractères.' })
     .max(100, { message: 'Le nom est limité à 100 caractères.' }),
-  description: z.string().trim().max(500, { message: 'La description est limitée à 500 caractères.' }),
+  description: z
+    .string()
+    .trim()
+    .max(500, { message: 'La description est limitée à 500 caractères.' }),
 });
 
 /**
@@ -38,7 +41,12 @@ const schemaCategorie = z.object({
 export function DialogueCategorie({ ouvert, surFermer, categorie }) {
   const creation = useCreerCategorie();
   const modification = useModifierCategorie();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
     resolver: zodResolver(schemaCategorie),
     defaultValues: { nom: '', description: '' },
   });
@@ -67,18 +75,33 @@ export function DialogueCategorie({ ouvert, surFermer, categorie }) {
       <DialogContent className="max-w-[480px]">
         <form noValidate onSubmit={handleSubmit(soumettre)} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>{categorie ? `Modifier ${categorie.nom}` : 'Nouvelle catégorie'}</DialogTitle>
-            <DialogDescription>Les catégories organisent le catalogue et ses filtres.</DialogDescription>
+            <DialogTitle>
+              {categorie ? `Modifier ${categorie.nom}` : 'Nouvelle catégorie'}
+            </DialogTitle>
+            <DialogDescription>
+              Les catégories organisent le catalogue et ses filtres.
+            </DialogDescription>
           </DialogHeader>
-          <ChampFormulaire id="nom-categorie" libelle="Nom" obligatoire erreur={errors.nom?.message}>
+          <ChampFormulaire
+            id="nom-categorie"
+            libelle="Nom"
+            obligatoire
+            erreur={errors.nom?.message}
+          >
             {(a) => <Input {...a} {...register('nom')} />}
           </ChampFormulaire>
-          <ChampFormulaire id="description-categorie" libelle="Description" erreur={errors.description?.message}>
+          <ChampFormulaire
+            id="description-categorie"
+            libelle="Description"
+            erreur={errors.description?.message}
+          >
             {(a) => <Textarea {...a} rows={3} maxLength={500} {...register('description')} />}
           </ChampFormulaire>
           <DialogFooter className="gap-2">
             <DialogClose asChild>
-              <Button type="button" variant="outline">Annuler</Button>
+              <Button type="button" variant="outline">
+                Annuler
+              </Button>
             </DialogClose>
             <Button type="submit" disabled={enCours}>
               {enCours && <Loader2 className="animate-spin" aria-hidden="true" />}

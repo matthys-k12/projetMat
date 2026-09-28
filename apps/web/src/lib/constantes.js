@@ -64,7 +64,12 @@ export const DISPONIBILITES = {
 export const ONGLETS_DEMANDES = [
   { valeur: 'toutes', libelle: 'Toutes', statuts: undefined, cleStat: 'total' },
   { valeur: 'attente', libelle: 'En attente', statuts: 'PENDING', cleStat: 'enAttente' },
-  { valeur: 'acceptees', libelle: 'Acceptées', statuts: 'APPROVED,FULFILLED', cleStat: 'acceptees' },
+  {
+    valeur: 'acceptees',
+    libelle: 'Acceptées',
+    statuts: 'APPROVED,FULFILLED',
+    cleStat: 'acceptees',
+  },
   { valeur: 'refusees', libelle: 'Refusées', statuts: 'REJECTED', cleStat: 'refusees' },
   { valeur: 'annulees', libelle: 'Annulées', statuts: 'CANCELLED', cleStat: 'annulees' },
   { valeur: 'remises', libelle: 'Remises', statuts: 'FULFILLED', cleStat: 'remises' },

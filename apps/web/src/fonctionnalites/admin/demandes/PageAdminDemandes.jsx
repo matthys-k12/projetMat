@@ -7,7 +7,13 @@ import { useSearchParams } from 'react-router-dom';
 import { subDays, format } from 'date-fns';
 import { ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { EnTetePage } from '@/components/communs/EnTetePage';
 import { Carte } from '@/components/communs/Carte';
 import { EtatVide } from '@/components/communs/EtatVide';
@@ -107,16 +113,23 @@ export function PageAdminDemandes() {
         {requete.isPending && <SqueletteListe lignes={8} />}
         {requete.isError && <EtatErreur erreur={requete.error} surReessayer={requete.refetch} />}
         {requete.isSuccess && requete.data.data.length === 0 && (
-          <EtatVide icone={ClipboardList} titre="Aucune demande" description="Aucune demande ne correspond à ces filtres." />
+          <EtatVide
+            icone={ClipboardList}
+            titre="Aucune demande"
+            description="Aucune demande ne correspond à ces filtres."
+          />
         )}
         {requete.isSuccess && requete.data.data.length > 0 && (
           <>
             <TableauDemandesAdmin demandes={requete.data.data} />
-            <Pagination meta={requete.data.meta} libelle="demandes" surChangement={(p) => modifier({ page: String(p) })} />
+            <Pagination
+              meta={requete.data.meta}
+              libelle="demandes"
+              surChangement={(p) => modifier({ page: String(p) })}
+            />
           </>
         )}
       </Carte>
     </>
   );
 }
-

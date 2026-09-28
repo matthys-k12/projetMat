@@ -31,7 +31,9 @@ export function CarteMateriel({ materiel }) {
         <div className="flex flex-1 flex-col gap-2 p-4">
           <div className="text-caption text-muted-foreground">{categorie}</div>
           <h3 className="text-[15px] font-semibold leading-[22px]">{materiel.nom}</h3>
-          <p className="line-clamp-2 min-h-9 text-small text-muted-foreground">{materiel.description}</p>
+          <p className="line-clamp-2 min-h-9 text-small text-muted-foreground">
+            {materiel.description}
+          </p>
           <div className="mt-1 flex items-center justify-between gap-2">
             <BadgeDisponibilite disponibilite={materiel.disponibilite} />
             <span className="chiffres text-small text-muted-foreground">

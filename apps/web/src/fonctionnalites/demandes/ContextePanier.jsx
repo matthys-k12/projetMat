@@ -60,7 +60,11 @@ function useValeurPanier() {
       if (!existante) return [...actuelles, { cle: nouvelleCle(), materiel, quantite }];
       return actuelles.map((ligne) =>
         ligne === existante
-          ? { ...ligne, materiel, quantite: Math.min(ligne.quantite + quantite, materiel.quantiteDisponible) }
+          ? {
+              ...ligne,
+              materiel,
+              quantite: Math.min(ligne.quantite + quantite, materiel.quantiteDisponible),
+            }
           : ligne,
       );
     });
@@ -72,7 +76,9 @@ function useValeurPanier() {
 
   /** @param {string} cle @param {Partial<LignePanier>} modifications */
   const modifier = useCallback((cle, modifications) => {
-    setLignes((actuelles) => actuelles.map((l) => (l.cle === cle ? { ...l, ...modifications } : l)));
+    setLignes((actuelles) =>
+      actuelles.map((l) => (l.cle === cle ? { ...l, ...modifications } : l)),
+    );
   }, []);
 
   /** @param {string} cle */

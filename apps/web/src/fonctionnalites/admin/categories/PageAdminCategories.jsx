@@ -18,7 +18,8 @@ import { formaterDate } from '@/lib/formatage';
 import { useCategoriesAdmin, useChangerStatutCategorie } from './hooks';
 import { DialogueCategorie } from './DialogueCategorie';
 
-const TH = 'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
+const TH =
+  'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
 const TD = 'h-[52px] border-t px-4 first:pl-5 last:pr-5';
 
 export function PageAdminCategories() {
@@ -51,7 +52,11 @@ export function PageAdminCategories() {
         {requete.isPending && <SqueletteListe />}
         {requete.isError && <EtatErreur erreur={requete.error} surReessayer={requete.refetch} />}
         {requete.isSuccess && requete.data.length === 0 && (
-          <EtatVide icone={FolderTree} titre="Aucune catégorie" description="Créez une première catégorie." />
+          <EtatVide
+            icone={FolderTree}
+            titre="Aucune catégorie"
+            description="Créez une première catégorie."
+          />
         )}
         {requete.isSuccess && requete.data.length > 0 && (
           <table className="w-full min-w-[640px]">
@@ -62,7 +67,9 @@ export function PageAdminCategories() {
                 <th className={`${TH} text-right`}>Matériels</th>
                 <th className={TH}>Créée le</th>
                 <th className={TH}>Statut</th>
-                <th className={TH}><span className="sr-only">Actions</span></th>
+                <th className={TH}>
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -71,7 +78,9 @@ export function PageAdminCategories() {
                   <td className={`${TD} font-medium`}>{categorie.nom}</td>
                   <td className={`${TD} text-muted-foreground`}>{categorie.description}</td>
                   <td className={`${TD} chiffres text-right`}>{categorie.nombreMateriels}</td>
-                  <td className={`${TD} chiffres text-muted-foreground`}>{formaterDate(categorie.dateCreation)}</td>
+                  <td className={`${TD} chiffres text-muted-foreground`}>
+                    {formaterDate(categorie.dateCreation)}
+                  </td>
                   <td className={TD}>
                     <Switch
                       checked={categorie.actif}
@@ -81,7 +90,12 @@ export function PageAdminCategories() {
                     />
                   </td>
                   <td className={`${TD} w-px text-right`}>
-                    <Button variant="ghost" size="iconSm" aria-label={`Modifier ${categorie.nom}`} onClick={() => setEnEdition(categorie)}>
+                    <Button
+                      variant="ghost"
+                      size="iconSm"
+                      aria-label={`Modifier ${categorie.nom}`}
+                      onClick={() => setEnEdition(categorie)}
+                    >
                       <Pencil />
                     </Button>
                   </td>
@@ -91,7 +105,11 @@ export function PageAdminCategories() {
           </table>
         )}
       </Carte>
-      <DialogueCategorie ouvert={enEdition !== undefined} categorie={enEdition} surFermer={() => setEnEdition(undefined)} />
+      <DialogueCategorie
+        ouvert={enEdition !== undefined}
+        categorie={enEdition}
+        surFermer={() => setEnEdition(undefined)}
+      />
     </>
   );
 }

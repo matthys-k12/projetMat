@@ -22,7 +22,10 @@ export const schemaMateriel = z
       .min(2, { message: 'Le nom doit contenir au moins 2 caractères.' })
       .max(150, { message: 'Le nom est limité à 150 caractères.' }),
     categorieId: z.string().min(1, { message: 'La catégorie est obligatoire.' }),
-    description: z.string().trim().max(2000, { message: 'La description est limitée à 2000 caractères.' }),
+    description: z
+      .string()
+      .trim()
+      .max(2000, { message: 'La description est limitée à 2000 caractères.' }),
     quantiteTotale: quantite('La quantité totale'),
     quantiteDisponible: quantite('La quantité disponible'),
     stockMinimum: quantite("Le seuil d'alerte"),

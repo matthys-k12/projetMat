@@ -6,7 +6,13 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { Boxes, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { EnTetePage } from '@/components/communs/EnTetePage';
 import { Carte } from '@/components/communs/Carte';
 import { EtatVide } from '@/components/communs/EtatVide';
@@ -46,7 +52,9 @@ export function PageAdminMateriels() {
   function modifier(modifications) {
     const suivants = { search: recherche, category: categorie, stock, page: '1', ...modifications };
     const parDefaut = { search: '', category: 'toutes', stock: 'tous', page: '1' };
-    setParametresUrl(Object.fromEntries(Object.entries(suivants).filter(([c, v]) => v !== parDefaut[c])));
+    setParametresUrl(
+      Object.fromEntries(Object.entries(suivants).filter(([c, v]) => v !== parDefaut[c])),
+    );
   }
 
   const total = requete.data?.meta.total;
@@ -110,12 +118,20 @@ export function PageAdminMateriels() {
         {requete.isPending && <SqueletteListe lignes={8} />}
         {requete.isError && <EtatErreur erreur={requete.error} surReessayer={requete.refetch} />}
         {requete.isSuccess && requete.data.data.length === 0 && (
-          <EtatVide icone={Boxes} titre="Aucun matériel" description="Aucun matériel ne correspond à ces filtres." />
+          <EtatVide
+            icone={Boxes}
+            titre="Aucun matériel"
+            description="Aucun matériel ne correspond à ces filtres."
+          />
         )}
         {requete.isSuccess && requete.data.data.length > 0 && (
           <>
             <TableauMaterielsAdmin materiels={requete.data.data} />
-            <Pagination meta={requete.data.meta} libelle="matériels" surChangement={(p) => modifier({ page: String(p) })} />
+            <Pagination
+              meta={requete.data.meta}
+              libelle="matériels"
+              surChangement={(p) => modifier({ page: String(p) })}
+            />
           </>
         )}
       </Carte>

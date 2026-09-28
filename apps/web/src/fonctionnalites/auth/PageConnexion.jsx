@@ -29,7 +29,10 @@ export function PageConnexion() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(schemaConnexion), defaultValues: { email: '', motDePasse: '' } });
+  } = useForm({
+    resolver: zodResolver(schemaConnexion),
+    defaultValues: { email: '', motDePasse: '' },
+  });
 
   if (etat === 'connecte') return <Navigate to="/dashboard" replace />;
 
@@ -50,7 +53,9 @@ export function PageConnexion() {
       <Logo />
       <div>
         <h1 className="text-h1">Connexion</h1>
-        <p className="mt-1 text-muted-foreground">Accédez à vos demandes de matériel informatique.</p>
+        <p className="mt-1 text-muted-foreground">
+          Accédez à vos demandes de matériel informatique.
+        </p>
       </div>
 
       <form className="flex flex-col gap-4" noValidate onSubmit={handleSubmit(soumettre)}>
@@ -63,7 +68,13 @@ export function PageConnexion() {
 
         <ChampFormulaire id="email" libelle="Adresse e-mail" erreur={errors.email?.message}>
           {(attributs) => (
-            <Input {...attributs} type="email" autoComplete="email" className="h-11 lg:h-9" {...register('email')} />
+            <Input
+              {...attributs}
+              type="email"
+              autoComplete="email"
+              className="h-11 lg:h-9"
+              {...register('email')}
+            />
           )}
         </ChampFormulaire>
 
@@ -82,7 +93,9 @@ export function PageConnexion() {
                 variant="ghost"
                 size="iconSm"
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 lg:right-0.5"
-                aria-label={motDePasseVisible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                aria-label={
+                  motDePasseVisible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'
+                }
                 aria-pressed={motDePasseVisible}
                 onClick={() => setMotDePasseVisible(!motDePasseVisible)}
               >

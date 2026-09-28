@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { BadgeStatut } from '@/components/communs/BadgeStatut';
 import { formaterDate, formaterDateRelative, pluriel } from '@/lib/formatage';
 
-const CLASSES_TH = 'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
+const CLASSES_TH =
+  'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
 const CLASSES_TD = 'h-[52px] border-t px-4 first:pl-5 last:pr-5';
 
 /**
@@ -34,7 +35,9 @@ export function ListeDemandes({ demandes }) {
           {demandes.map((demande) => (
             <tr key={demande.id} className="hover:bg-background">
               <td className={CLASSES_TD}>
-                <span className="font-mono text-small font-medium">{demande.reference}</span>
+                <span className="whitespace-nowrap font-mono text-small font-medium">
+                  {demande.reference}
+                </span>
               </td>
               <td className={`${CLASSES_TD} chiffres`}>{formaterDate(demande.dateCreation)}</td>
               <td className={`${CLASSES_TD} chiffres text-right`}>{demande.nombreArticles}</td>
@@ -46,7 +49,10 @@ export function ListeDemandes({ demandes }) {
               </td>
               <td className={`${CLASSES_TD} w-px text-right`}>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link to={`/requests/${demande.id}`} aria-label={`Voir la demande ${demande.reference}`}>
+                  <Link
+                    to={`/requests/${demande.id}`}
+                    aria-label={`Voir la demande ${demande.reference}`}
+                  >
                     Voir
                   </Link>
                 </Button>
@@ -65,11 +71,14 @@ export function ListeDemandes({ demandes }) {
             >
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-small font-medium">{demande.reference}</span>
+                  <span className="whitespace-nowrap font-mono text-small font-medium">
+                    {demande.reference}
+                  </span>
                   <BadgeStatut statut={demande.statut} />
                 </div>
                 <span className="chiffres text-caption text-muted-foreground">
-                  {formaterDate(demande.dateCreation)} · {pluriel(demande.nombreArticles, 'matériel')}
+                  {formaterDate(demande.dateCreation)} ·{' '}
+                  {pluriel(demande.nombreArticles, 'matériel')}
                 </span>
               </div>
               <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />

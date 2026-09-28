@@ -22,13 +22,20 @@ export function PageDetailMateriel() {
 
   return (
     <>
-      <Link to="/materials" className="flex items-center gap-1.5 self-start text-small text-primary hover:underline">
+      <Link
+        to="/materials"
+        className="flex items-center gap-1.5 self-start text-small text-primary hover:underline"
+      >
         <ArrowLeft className="size-4" aria-hidden="true" /> Retour au catalogue
       </Link>
       {requete.isPending && <SqueletteDetail />}
       {requete.isError && (
         <Carte>
-          <EtatErreur titre="Matériel introuvable" erreur={requete.error} surReessayer={requete.refetch} />
+          <EtatErreur
+            titre="Matériel introuvable"
+            erreur={requete.error}
+            surReessayer={requete.refetch}
+          />
         </Carte>
       )}
       {requete.isSuccess && <ContenuDetail materiel={requete.data} />}
@@ -63,7 +70,11 @@ function ContenuDetail({ materiel }) {
   return (
     <div className="grid items-start gap-6 md:grid-cols-2 lg:gap-8">
       <Carte className="overflow-hidden">
-        <VisuelMateriel nom={materiel.nom} categorie={materiel.categorie?.nom} imageUrl={materiel.imageUrl} />
+        <VisuelMateriel
+          nom={materiel.nom}
+          categorie={materiel.categorie?.nom}
+          imageUrl={materiel.imageUrl}
+        />
       </Carte>
 
       <div className="flex flex-col gap-6">
@@ -73,7 +84,8 @@ function ContenuDetail({ materiel }) {
           <div className="flex items-center gap-3">
             <BadgeDisponibilite disponibilite={materiel.disponibilite} />
             <span className="chiffres text-small text-muted-foreground">
-              <b className="font-medium text-foreground">{materiel.quantiteDisponible}</b> disponible
+              <b className="font-medium text-foreground">{materiel.quantiteDisponible}</b>{' '}
+              disponible
               {materiel.quantiteDisponible > 1 ? 's' : ''} sur {materiel.quantiteTotale}
             </span>
           </div>

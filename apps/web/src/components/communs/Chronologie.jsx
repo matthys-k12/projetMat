@@ -26,7 +26,11 @@ import { formaterDateHeure, formaterDateRelative } from '@/lib/formatage';
 function etapesSuivantes(statut, dateDerniereEtape) {
   if (statut === 'PENDING') {
     return [
-      { titre: 'En attente de validation', meta: `depuis ${formaterDateRelative(dateDerniereEtape).replace('il y a ', '')}`, etat: 'courant' },
+      {
+        titre: 'En attente de validation',
+        meta: `depuis ${formaterDateRelative(dateDerniereEtape).replace('il y a ', '')}`,
+        etat: 'courant',
+      },
       { titre: 'Approuvée ou refusée', meta: '—', etat: 'avenir' },
       { titre: 'Matériel remis', meta: '—', etat: 'avenir' },
     ];

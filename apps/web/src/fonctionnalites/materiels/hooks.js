@@ -32,5 +32,9 @@ export function useCatalogueComplet() {
 }
 
 export function useCategories() {
-  return useQuery({ queryKey: ['categories'], queryFn: api.listerCategories, staleTime: 5 * 60_000 });
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: api.listerCategories,
+    staleTime: 5 * 60_000,
+  });
 }

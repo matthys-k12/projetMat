@@ -9,7 +9,13 @@ import { PageConnexion } from '@/fonctionnalites/auth/PageConnexion';
 
 /** Rend la page avec un contexte d'authentification simulé. */
 function rendre(seConnecter = vi.fn()) {
-  const valeur = { etat: 'deconnecte', profil: null, estAdmin: false, seConnecter, seDeconnecter: vi.fn() };
+  const valeur = {
+    etat: 'deconnecte',
+    profil: null,
+    estAdmin: false,
+    seConnecter,
+    seDeconnecter: vi.fn(),
+  };
   render(
     <MemoryRouter>
       <ContexteAuth.Provider value={valeur}>

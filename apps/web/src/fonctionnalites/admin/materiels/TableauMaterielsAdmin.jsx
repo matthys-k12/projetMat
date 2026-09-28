@@ -12,7 +12,8 @@ import { VisuelMateriel } from '@/components/communs/VisuelMateriel';
 import { cn } from '@/lib/utils';
 import { useChangerStatutMateriel } from './hooks';
 
-const TH = 'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
+const TH =
+  'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
 const TD = 'h-12 border-t px-4 first:pl-5 last:pr-5';
 
 /**
@@ -73,16 +74,29 @@ export function TableauMaterielsAdmin({ materiels }) {
               <tr key={m.id} className="hover:bg-background">
                 <td className={TD}>
                   <span className="flex items-center gap-2.5">
-                    <VisuelMateriel nom={m.nom} categorie={m.categorie?.nom} imageUrl={m.imageUrl} taille="miniature" />
+                    <VisuelMateriel
+                      nom={m.nom}
+                      categorie={m.categorie?.nom}
+                      imageUrl={m.imageUrl}
+                      taille="miniature"
+                    />
                     <span className="font-medium">{m.nom}</span>
                   </span>
                 </td>
                 <td className={`${TD} text-muted-foreground`}>{m.categorie?.nom}</td>
                 <td className={`${TD} chiffres text-right`}>{m.quantiteTotale}</td>
-                <td className={cn(TD, 'chiffres text-right', m.disponibilite !== 'disponible' && 'font-medium text-warning-text')}>
+                <td
+                  className={cn(
+                    TD,
+                    'chiffres text-right',
+                    m.disponibilite !== 'disponible' && 'font-medium text-warning-text',
+                  )}
+                >
                   {m.quantiteDisponible}
                 </td>
-                <td className={`${TD} chiffres text-right text-muted-foreground`}>{m.stockMinimum}</td>
+                <td className={`${TD} chiffres text-right text-muted-foreground`}>
+                  {m.stockMinimum}
+                </td>
                 <td className={TD}>
                   <BadgeDisponibilite disponibilite={m.disponibilite} />
                 </td>
@@ -105,8 +119,16 @@ export function TableauMaterielsAdmin({ materiels }) {
       <ul className="divide-y md:hidden">
         {materiels.map((m) => (
           <li key={m.id} className="flex items-center gap-3 px-4 py-3">
-            <VisuelMateriel nom={m.nom} categorie={m.categorie?.nom} imageUrl={m.imageUrl} taille="miniature" />
-            <Link to={`/admin/materials/${m.id}/edit`} className="flex min-w-0 flex-1 flex-col gap-1">
+            <VisuelMateriel
+              nom={m.nom}
+              categorie={m.categorie?.nom}
+              imageUrl={m.imageUrl}
+              taille="miniature"
+            />
+            <Link
+              to={`/admin/materials/${m.id}/edit`}
+              className="flex min-w-0 flex-1 flex-col gap-1"
+            >
               <span className="truncate font-medium">{m.nom}</span>
               <span className="chiffres text-caption text-muted-foreground">
                 {m.quantiteDisponible} / {m.quantiteTotale} · seuil {m.stockMinimum}

@@ -21,7 +21,9 @@ export function TableauMateriels({ demande, avecStock = false, children }) {
   return (
     <Carte>
       <EnTeteCarte titre="Matériels demandés">
-        <span className="text-small text-muted-foreground">{pluriel(demande.articles.length, 'article')}</span>
+        <span className="text-small text-muted-foreground">
+          {pluriel(demande.articles.length, 'article')}
+        </span>
       </EnTeteCarte>
       <ul className="divide-y">
         {demande.articles.map((article) => {
@@ -37,13 +39,22 @@ export function TableauMateriels({ demande, avecStock = false, children }) {
               />
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="font-medium">{article.materiel.nom}</span>
-                <span className="text-caption text-muted-foreground">{article.materiel.categorie}</span>
+                <span className="text-caption text-muted-foreground">
+                  {article.materiel.categorie}
+                </span>
               </div>
               <div className="chiffres text-right">
                 <div>× {article.quantite}</div>
                 {avecStock && (
-                  <div className={cn('text-caption', insuffisant ? 'font-medium text-destructive-text' : 'text-muted-foreground')}>
-                    {insuffisant && <CircleAlert className="mr-1 inline size-3" aria-hidden="true" />}
+                  <div
+                    className={cn(
+                      'text-caption',
+                      insuffisant ? 'font-medium text-destructive-text' : 'text-muted-foreground',
+                    )}
+                  >
+                    {insuffisant && (
+                      <CircleAlert className="mr-1 inline size-3" aria-hidden="true" />
+                    )}
                     Stock actuel : {stock}
                     {insuffisant && ' (insuffisant)'}
                   </div>
@@ -68,7 +79,10 @@ export function NoteAdministrateur({ demande }) {
   const auteur = decision?.auteur?.nomComplet ?? 'Administrateur';
 
   return (
-    <section className="flex gap-3 rounded-lg border bg-background p-4" aria-label="Commentaire de l'administrateur">
+    <section
+      className="flex gap-3 rounded-lg border bg-background p-4"
+      aria-label="Commentaire de l'administrateur"
+    >
       <Avatar nom={auteur} grand />
       <div>
         <div className="flex flex-wrap items-center gap-x-2">

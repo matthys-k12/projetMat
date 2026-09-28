@@ -17,7 +17,13 @@ import { FiltresCatalogue } from './FiltresCatalogue';
 import { useMateriels } from './hooks';
 
 /** Valeurs par défaut des filtres (« toutes »/« tous » = pas de filtre). */
-const DEFAUTS = { search: '', category: 'toutes', availability: 'tous', sort: 'nom_asc', page: '1' };
+const DEFAUTS = {
+  search: '',
+  category: 'toutes',
+  availability: 'tous',
+  sort: 'nom_asc',
+  page: '1',
+};
 
 export function PageCatalogue() {
   const [parametresUrl, setParametresUrl] = useSearchParams();
@@ -42,7 +48,9 @@ export function PageCatalogue() {
   /** Met à jour l'URL ; tout changement de filtre revient à la page 1. */
   function modifierFiltres(modifications) {
     const suivants = { ...filtres, page: '1', ...modifications };
-    const nettoyes = Object.entries(suivants).filter(([cle, valeur]) => valeur && valeur !== DEFAUTS[cle]);
+    const nettoyes = Object.entries(suivants).filter(
+      ([cle, valeur]) => valeur && valeur !== DEFAUTS[cle],
+    );
     setParametresUrl(Object.fromEntries(nettoyes));
   }
 
@@ -59,10 +67,18 @@ export function PageCatalogue() {
           </Button>
         }
       />
-      <FiltresCatalogue filtres={filtres} surChangement={modifierFiltres} total={requete.data?.meta.total} />
+      <FiltresCatalogue
+        filtres={filtres}
+        surChangement={modifierFiltres}
+        total={requete.data?.meta.total}
+      />
 
       {requete.isPending && (
-        <div aria-busy="true" aria-label="Chargement du catalogue" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div
+          aria-busy="true"
+          aria-label="Chargement du catalogue"
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        >
           {Array.from({ length: 8 }, (_, index) => (
             <SqueletteCarteMateriel key={index} />
           ))}
@@ -71,7 +87,11 @@ export function PageCatalogue() {
 
       {requete.isError && (
         <Carte>
-          <EtatErreur titre="Impossible de charger le catalogue" erreur={requete.error} surReessayer={requete.refetch} />
+          <EtatErreur
+            titre="Impossible de charger le catalogue"
+            erreur={requete.error}
+            surReessayer={requete.refetch}
+          />
         </Carte>
       )}
 

@@ -31,7 +31,9 @@ export function ControleSegmente({ libelle, options, valeur, surChangement, clas
             onClick={() => surChangement(option.valeur)}
             className={cn(
               'inline-flex flex-1 items-center justify-center whitespace-nowrap rounded-sm px-3 text-small font-medium',
-              actif ? 'bg-card text-foreground shadow-sm' : 'text-muted-strong hover:text-foreground',
+              actif
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-strong hover:text-foreground',
             )}
           >
             {option.libelle}

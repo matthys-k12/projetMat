@@ -5,7 +5,13 @@
  */
 import { useState } from 'react';
 import { History } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { EnTetePage } from '@/components/communs/EnTetePage';
 import { Carte } from '@/components/communs/Carte';
 import { Avatar } from '@/components/communs/Avatar';
@@ -17,7 +23,8 @@ import { ACTIONS_AUDIT, TYPES_ENTITE } from '@/lib/constantes';
 import { formaterDateHeure } from '@/lib/formatage';
 import { useAudit } from './hooks';
 
-const TH = 'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
+const TH =
+  'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
 const TD = 'h-12 border-t px-4 first:pl-5 last:pr-5';
 
 /**
@@ -25,7 +32,12 @@ const TD = 'h-12 border-t px-4 first:pl-5 last:pr-5';
  * @param {{ typeEntite: string, metadonnees: Record<string, any> }} ligne
  */
 function libelleRessource(ligne) {
-  return ligne.metadonnees?.reference ?? ligne.metadonnees?.nom ?? TYPES_ENTITE[ligne.typeEntite] ?? ligne.typeEntite;
+  return (
+    ligne.metadonnees?.reference ??
+    ligne.metadonnees?.nom ??
+    TYPES_ENTITE[ligne.typeEntite] ??
+    ligne.typeEntite
+  );
 }
 
 export function PageAdminAudit() {
@@ -41,28 +53,53 @@ export function PageAdminAudit() {
 
   return (
     <>
-      <EnTetePage titre="Audit" description="Historique horodaté de toutes les actions. Lecture seule." />
+      <EnTetePage
+        titre="Audit"
+        description="Historique horodaté de toutes les actions. Lecture seule."
+      />
       <Carte className="overflow-x-auto">
         <div className="flex flex-col gap-3 border-b px-4 py-3 md:flex-row md:px-5">
-          <Select value={action} onValueChange={(v) => { setAction(v); setPage(1); }}>
+          <Select
+            value={action}
+            onValueChange={(v) => {
+              setAction(v);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="h-11 bg-card md:h-9 md:w-[280px]" aria-label="Type d'action">
-              <span className="truncate"><span className="text-muted-foreground">Type d&apos;action : </span><SelectValue /></span>
+              <span className="truncate">
+                <span className="text-muted-foreground">Type d&apos;action : </span>
+                <SelectValue />
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="toutes">Toutes</SelectItem>
               {Object.entries(ACTIONS_AUDIT).map(([code, libelle]) => (
-                <SelectItem key={code} value={code}>{libelle}</SelectItem>
+                <SelectItem key={code} value={code}>
+                  {libelle}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={type} onValueChange={(v) => { setType(v); setPage(1); }}>
+          <Select
+            value={type}
+            onValueChange={(v) => {
+              setType(v);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="h-11 bg-card md:h-9 md:w-[220px]" aria-label="Ressource">
-              <span className="truncate"><span className="text-muted-foreground">Ressource : </span><SelectValue /></span>
+              <span className="truncate">
+                <span className="text-muted-foreground">Ressource : </span>
+                <SelectValue />
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="tous">Toutes</SelectItem>
               {Object.entries(TYPES_ENTITE).map(([code, libelle]) => (
-                <SelectItem key={code} value={code}>{libelle}</SelectItem>
+                <SelectItem key={code} value={code}>
+                  {libelle}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -71,7 +108,11 @@ export function PageAdminAudit() {
         {requete.isPending && <SqueletteListe lignes={8} />}
         {requete.isError && <EtatErreur erreur={requete.error} surReessayer={requete.refetch} />}
         {requete.isSuccess && requete.data.data.length === 0 && (
-          <EtatVide icone={History} titre="Aucune action" description="Aucune action ne correspond à ces filtres." />
+          <EtatVide
+            icone={History}
+            titre="Aucune action"
+            description="Aucune action ne correspond à ces filtres."
+          />
         )}
         {requete.isSuccess && requete.data.data.length > 0 && (
           <>
@@ -100,7 +141,9 @@ export function PageAdminAudit() {
                       </span>
                     </td>
                     <td className={`${TD} font-mono text-small`}>{libelleRessource(ligne)}</td>
-                    <td className={`${TD} chiffres text-muted-foreground`}>{formaterDateHeure(ligne.date)}</td>
+                    <td className={`${TD} chiffres text-muted-foreground`}>
+                      {formaterDateHeure(ligne.date)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

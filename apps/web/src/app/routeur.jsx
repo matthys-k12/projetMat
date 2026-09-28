@@ -6,6 +6,7 @@
  * - Connecté (GardeConnexion) : tableau de bord, catalogue, demandes, notifications, profil
  * - ADMIN (GardeAdmin, confort visuel — l'API protège réellement /admin) : /admin/*
  */
+import { lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { MiseEnPageApp } from './miseEnPage/MiseEnPageApp';
 import { MiseEnPageAuth } from './miseEnPage/MiseEnPageAuth';
@@ -21,17 +22,50 @@ import { PageMesDemandes } from '@/fonctionnalites/demandes/PageMesDemandes';
 import { PageDetailDemande } from '@/fonctionnalites/demandes/PageDetailDemande';
 import { PageNotifications } from '@/fonctionnalites/notifications/PageNotifications';
 import { PageProfil } from '@/fonctionnalites/profil/PageProfil';
-import { PageAdminTableauDeBord } from '@/fonctionnalites/admin/tableauDeBord/PageAdminTableauDeBord';
-import { PageAdminDemandes } from '@/fonctionnalites/admin/demandes/PageAdminDemandes';
-import { PageAdminDetailDemande } from '@/fonctionnalites/admin/demandes/PageAdminDetailDemande';
-import { PageAdminMateriels } from '@/fonctionnalites/admin/materiels/PageAdminMateriels';
-import { PageFormulaireMateriel } from '@/fonctionnalites/admin/materiels/PageFormulaireMateriel';
-import { PageAdminCategories } from '@/fonctionnalites/admin/categories/PageAdminCategories';
-import { PageAdminAudit } from '@/fonctionnalites/admin/audit/PageAdminAudit';
+
+/**
+ * Chargement différé d'une page (code splitting) : les écrans d'administration
+ * et Recharts ne sont téléchargés que par les administrateurs qui les ouvrent.
+ * @param {() => Promise<Record<string, import('react').ComponentType>>} importer
+ * @param {string} nom nom de l'export de la page
+ */
+function charger(importer, nom) {
+  return lazy(() => importer().then((module) => ({ default: module[nom] })));
+}
+
+const PageAdminTableauDeBord = charger(
+  () => import('@/fonctionnalites/admin/tableauDeBord/PageAdminTableauDeBord'),
+  'PageAdminTableauDeBord',
+);
+const PageAdminDemandes = charger(
+  () => import('@/fonctionnalites/admin/demandes/PageAdminDemandes'),
+  'PageAdminDemandes',
+);
+const PageAdminDetailDemande = charger(
+  () => import('@/fonctionnalites/admin/demandes/PageAdminDetailDemande'),
+  'PageAdminDetailDemande',
+);
+const PageAdminMateriels = charger(
+  () => import('@/fonctionnalites/admin/materiels/PageAdminMateriels'),
+  'PageAdminMateriels',
+);
+const PageFormulaireMateriel = charger(
+  () => import('@/fonctionnalites/admin/materiels/PageFormulaireMateriel'),
+  'PageFormulaireMateriel',
+);
+const PageAdminCategories = charger(
+  () => import('@/fonctionnalites/admin/categories/PageAdminCategories'),
+  'PageAdminCategories',
+);
+const PageAdminAudit = charger(
+  () => import('@/fonctionnalites/admin/audit/PageAdminAudit'),
+  'PageAdminAudit',
+);
 
 export function Routeur() {
   return (
-    <BrowserRouter>
+    // Options « future » : adopte dès maintenant le comportement de React Router v7 (supprime les avertissements)
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route element={<MiseEnPageAuth />}>
           <Route path="/login" element={<PageConnexion />} />

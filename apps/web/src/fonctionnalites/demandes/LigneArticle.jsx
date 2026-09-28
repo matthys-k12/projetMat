@@ -5,7 +5,13 @@
  */
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { SelecteurQuantite } from '@/components/communs/SelecteurQuantite';
 import { MessageErreur } from '@/components/communs/ChampFormulaire';
 import { VisuelMateriel } from '@/components/communs/VisuelMateriel';
@@ -49,7 +55,11 @@ export function LigneArticle({
           value={ligne.materiel?.id ?? ''}
           onValueChange={(id) => surChangerMateriel(catalogue.find((m) => m.id === id))}
         >
-          <SelectTrigger id={idChamp} className="h-11 bg-card md:h-9" aria-describedby={erreur ? idErreur : undefined}>
+          <SelectTrigger
+            id={idChamp}
+            className="h-11 bg-card md:h-9"
+            aria-describedby={erreur ? idErreur : undefined}
+          >
             <SelectValue placeholder="Choisir un matériel…" />
           </SelectTrigger>
           <SelectContent>
@@ -58,12 +68,27 @@ export function LigneArticle({
                 key={materiel.id}
                 value={materiel.id}
                 // Un matériel déjà présent sur une autre ligne n'est pas proposé (pas de doublon)
-                disabled={materiel.quantiteDisponible === 0 || (idsDejaChoisis.includes(materiel.id) && materiel.id !== ligne.materiel?.id)}
+                disabled={
+                  materiel.quantiteDisponible === 0 ||
+                  (idsDejaChoisis.includes(materiel.id) && materiel.id !== ligne.materiel?.id)
+                }
               >
                 <span className="flex items-center gap-2">
-                  <VisuelMateriel nom={materiel.nom} categorie={materiel.categorie?.nom} taille="miniature" className="h-[18px] w-6" />
+                  <VisuelMateriel
+                    nom={materiel.nom}
+                    categorie={materiel.categorie?.nom}
+                    taille="miniature"
+                    className="h-[18px] w-6"
+                  />
                   {materiel.nom}
-                  <span className={cn('text-caption', materiel.disponibilite === 'stock_faible' ? 'text-warning-text' : 'text-muted-foreground')}>
+                  <span
+                    className={cn(
+                      'text-caption',
+                      materiel.disponibilite === 'stock_faible'
+                        ? 'text-warning-text'
+                        : 'text-muted-foreground',
+                    )}
+                  >
                     {materiel.quantiteDisponible} en stock
                   </span>
                 </span>

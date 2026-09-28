@@ -61,10 +61,16 @@ export function DialogueRefus({ demande }) {
           <DialogHeader>
             <DialogTitle>Refuser la demande {demande.reference}</DialogTitle>
             <DialogDescription>
-              {demande.demandeur?.nomComplet} recevra une notification avec le motif indiqué ci-dessous.
+              {demande.demandeur?.nomComplet} recevra une notification avec le motif indiqué
+              ci-dessous.
             </DialogDescription>
           </DialogHeader>
-          <ChampFormulaire id="motif-refus" libelle="Motif du refus" obligatoire erreur={errors.commentaire?.message}>
+          <ChampFormulaire
+            id="motif-refus"
+            libelle="Motif du refus"
+            obligatoire
+            erreur={errors.commentaire?.message}
+          >
             {(attributs) => (
               <Textarea
                 {...attributs}

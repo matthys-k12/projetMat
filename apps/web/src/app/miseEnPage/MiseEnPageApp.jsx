@@ -3,7 +3,7 @@
  * tiroir (Sheet, 300 px) en dessous, en-tête collant, contenu paddé 32 px (16 px mobile).
  * Tier : présentation.
  */
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { NavigationLaterale } from './NavigationLaterale';
@@ -21,7 +21,9 @@ export function MiseEnPageApp() {
       <Sheet open={menuOuvert} onOpenChange={setMenuOuvert}>
         <SheetContent side="left" className="w-[300px] p-0 sm:max-w-[300px]">
           <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
-          <SheetDescription className="sr-only">Liens vers les pages de l&apos;application</SheetDescription>
+          <SheetDescription className="sr-only">
+            Liens vers les pages de l&apos;application
+          </SheetDescription>
           <NavigationLaterale mobile surNavigation={() => setMenuOuvert(false)} />
         </SheetContent>
       </Sheet>
@@ -29,7 +31,12 @@ export function MiseEnPageApp() {
       <div className="flex min-w-0 flex-col">
         <EnTeteApp surOuvrirMenu={() => setMenuOuvert(true)} />
         <main className="mx-auto flex w-full max-w-[1256px] flex-col gap-6 p-4 pb-28 lg:p-8">
-          <Outlet />
+          {/* Suspense : affiché pendant le chargement d'une page différée (administration) */}
+          <Suspense
+            fallback={<div aria-busy="true" className="h-64 animate-pulse rounded-lg bg-muted" />}
+          >
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

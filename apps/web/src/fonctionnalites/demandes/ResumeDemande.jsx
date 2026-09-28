@@ -29,7 +29,9 @@ export function ResumeDemande({ lignes, nombreErreurs, envoiEnCours, surEnvoyer 
     </Button>
   );
   const alerte = nombreErreurs > 0 && (
-    <Alerte icone={CircleAlert}>{pluriel(nombreErreurs, 'erreur')} à corriger avant l&apos;envoi.</Alerte>
+    <Alerte icone={CircleAlert}>
+      {pluriel(nombreErreurs, 'erreur')} à corriger avant l&apos;envoi.
+    </Alerte>
   );
 
   return (
@@ -42,11 +44,15 @@ export function ResumeDemande({ lignes, nombreErreurs, envoiEnCours, surEnvoyer 
             return (
               <li key={ligne.cle} className="flex justify-between gap-3 py-2 text-small">
                 <span className="min-w-0">{ligne.materiel.nom}</span>
-                <span className={cn('chiffres', depasse && 'font-medium text-destructive-text')}>× {ligne.quantite}</span>
+                <span className={cn('chiffres', depasse && 'font-medium text-destructive-text')}>
+                  × {ligne.quantite}
+                </span>
               </li>
             );
           })}
-          {choisies.length === 0 && <li className="py-2 text-small text-muted-foreground">Aucun matériel choisi.</li>}
+          {choisies.length === 0 && (
+            <li className="py-2 text-small text-muted-foreground">Aucun matériel choisi.</li>
+          )}
         </ul>
         <div className="flex flex-col gap-3 border-t p-5">
           <div className="flex justify-between text-small">

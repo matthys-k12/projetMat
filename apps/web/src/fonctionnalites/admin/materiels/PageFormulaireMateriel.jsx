@@ -13,7 +13,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { EnTetePage } from '@/components/communs/EnTetePage';
 import { Alerte, Carte } from '@/components/communs/Carte';
 import { ChampFormulaire } from '@/components/communs/ChampFormulaire';
@@ -45,9 +51,18 @@ export function PageFormulaireMateriel() {
   const edition = Boolean(id);
   const existant = useMaterielAdmin(id);
 
-  if (edition && existant.isPending) return <div aria-busy="true" className="h-96 animate-pulse rounded-lg bg-muted" />;
+  if (edition && existant.isPending)
+    return <div aria-busy="true" className="h-96 animate-pulse rounded-lg bg-muted" />;
   if (edition && existant.isError) {
-    return <Carte><EtatErreur titre="Matériel introuvable" erreur={existant.error} surReessayer={existant.refetch} /></Carte>;
+    return (
+      <Carte>
+        <EtatErreur
+          titre="Matériel introuvable"
+          erreur={existant.error}
+          surReessayer={existant.refetch}
+        />
+      </Carte>
+    );
   }
   return <Formulaire materiel={existant.data} />;
 }
@@ -61,7 +76,14 @@ function Formulaire({ materiel }) {
   const creation = useCreerMateriel();
   const modification = useModifierMateriel();
 
-  const { register, control, handleSubmit, watch, reset, formState: { errors, isSubmitted } } = useForm({
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors, isSubmitted },
+  } = useForm({
     resolver: zodResolver(schemaMateriel),
     defaultValues: VALEURS_VIDES,
   });
@@ -98,7 +120,10 @@ function Formulaire({ materiel }) {
 
   return (
     <>
-      <Link to="/admin/materials" className="flex items-center gap-1.5 self-start text-small text-primary hover:underline">
+      <Link
+        to="/admin/materials"
+        className="flex items-center gap-1.5 self-start text-small text-primary hover:underline"
+      >
         <ArrowLeft className="size-4" aria-hidden="true" /> Matériels
       </Link>
       <EnTetePage
@@ -107,7 +132,8 @@ function Formulaire({ materiel }) {
       />
       {isSubmitted && nombreErreurs > 0 && (
         <Alerte icone={CircleAlert} className="max-w-[880px]">
-          <b className="font-medium">{pluriel(nombreErreurs, 'champ')} à corriger.</b> Vérifiez les champs signalés ci-dessous.
+          <b className="font-medium">{pluriel(nombreErreurs, 'champ')} à corriger.</b> Vérifiez les
+          champs signalés ci-dessous.
         </Alerte>
       )}
 
@@ -116,7 +142,12 @@ function Formulaire({ materiel }) {
           <ChampFormulaire id="nom" libelle="Nom" obligatoire erreur={errors.nom?.message}>
             {(a) => <Input {...a} {...register('nom')} />}
           </ChampFormulaire>
-          <ChampFormulaire id="categorie" libelle="Catégorie" obligatoire erreur={errors.categorieId?.message}>
+          <ChampFormulaire
+            id="categorie"
+            libelle="Catégorie"
+            obligatoire
+            erreur={errors.categorieId?.message}
+          >
             {(a) => (
               <Controller
                 control={control}
@@ -129,7 +160,8 @@ function Formulaire({ materiel }) {
                     <SelectContent>
                       {categories.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
-                          {c.nom}{c.actif ? '' : ' (inactive)'}
+                          {c.nom}
+                          {c.actif ? '' : ' (inactive)'}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -138,7 +170,11 @@ function Formulaire({ materiel }) {
               />
             )}
           </ChampFormulaire>
-          <ChampFormulaire id="description" libelle="Description" erreur={errors.description?.message}>
+          <ChampFormulaire
+            id="description"
+            libelle="Description"
+            erreur={errors.description?.message}
+          >
             {(a) => <Textarea {...a} rows={3} maxLength={2000} {...register('description')} />}
           </ChampFormulaire>
           <ZoneImage materiel={materiel} />
@@ -146,14 +182,51 @@ function Formulaire({ materiel }) {
 
         <Section titre="Stock" description="Une alerte est levée sous le seuil.">
           <div className="grid gap-4 sm:grid-cols-3">
-            <ChampFormulaire id="quantiteTotale" libelle="Quantité totale" erreur={errors.quantiteTotale?.message}>
-              {(a) => <Input {...a} type="number" min={0} className="chiffres" {...register('quantiteTotale')} />}
+            <ChampFormulaire
+              id="quantiteTotale"
+              libelle="Quantité totale"
+              erreur={errors.quantiteTotale?.message}
+            >
+              {(a) => (
+                <Input
+                  {...a}
+                  type="number"
+                  min={0}
+                  className="chiffres"
+                  {...register('quantiteTotale')}
+                />
+              )}
             </ChampFormulaire>
-            <ChampFormulaire id="quantiteDisponible" libelle="Quantité disponible" erreur={errors.quantiteDisponible?.message}>
-              {(a) => <Input {...a} type="number" min={0} className="chiffres" {...register('quantiteDisponible')} />}
+            <ChampFormulaire
+              id="quantiteDisponible"
+              libelle="Quantité disponible"
+              erreur={errors.quantiteDisponible?.message}
+            >
+              {(a) => (
+                <Input
+                  {...a}
+                  type="number"
+                  min={0}
+                  className="chiffres"
+                  {...register('quantiteDisponible')}
+                />
+              )}
             </ChampFormulaire>
-            <ChampFormulaire id="stockMinimum" libelle="Seuil d'alerte" erreur={errors.stockMinimum?.message} aide={`Stock faible à partir de ${seuil}.`}>
-              {(a) => <Input {...a} type="number" min={0} className="chiffres" {...register('stockMinimum')} />}
+            <ChampFormulaire
+              id="stockMinimum"
+              libelle="Seuil d'alerte"
+              erreur={errors.stockMinimum?.message}
+              aide={`Stock faible à partir de ${seuil}.`}
+            >
+              {(a) => (
+                <Input
+                  {...a}
+                  type="number"
+                  min={0}
+                  className="chiffres"
+                  {...register('stockMinimum')}
+                />
+              )}
             </ChampFormulaire>
           </div>
         </Section>
@@ -164,9 +237,17 @@ function Formulaire({ materiel }) {
             name="actif"
             render={({ field }) => (
               <div className="flex items-start gap-3">
-                <Switch id="actif" checked={field.value} onCheckedChange={field.onChange} className="mt-0.5" aria-describedby="actif-aide" />
+                <Switch
+                  id="actif"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  className="mt-0.5"
+                  aria-describedby="actif-aide"
+                />
                 <div>
-                  <label htmlFor="actif" className="text-label">{field.value ? 'Actif' : 'Inactif'}</label>
+                  <label htmlFor="actif" className="text-label">
+                    {field.value ? 'Actif' : 'Inactif'}
+                  </label>
                   <div id="actif-aide" className="text-small text-muted-foreground">
                     Visible dans le catalogue et disponible à la demande.
                   </div>

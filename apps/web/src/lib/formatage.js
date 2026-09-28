@@ -3,7 +3,13 @@
  *
  * Tier : présentation. Utilisé par : tableaux, détails, chronologie, notifications.
  */
-import { differenceInCalendarDays, format, formatDistanceToNowStrict, isToday, isYesterday } from 'date-fns';
+import {
+  differenceInCalendarDays,
+  format,
+  formatDistanceToNowStrict,
+  isToday,
+  isYesterday,
+} from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 /**

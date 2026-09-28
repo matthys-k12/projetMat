@@ -25,7 +25,8 @@ export function ZoneImage({ materiel }) {
   /** Vérifie le fichier côté navigateur (l'API revérifie) puis l'envoie. @param {File|undefined} fichier */
   async function envoyer(fichier) {
     if (!fichier || !materiel) return;
-    if (!TYPES_ACCEPTES.includes(fichier.type)) return toast.error('Format accepté : PNG, JPEG ou WebP.');
+    if (!TYPES_ACCEPTES.includes(fichier.type))
+      return toast.error('Format accepté : PNG, JPEG ou WebP.');
     if (fichier.size > TAILLE_MAX) return toast.error("L'image ne doit pas dépasser 2 Mo.");
     try {
       await envoi.mutateAsync({ id: materiel.id, fichier });
@@ -48,10 +49,16 @@ export function ZoneImage({ materiel }) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span id="libelle-image" className="text-label">Image</span>
+      <span id="libelle-image" className="text-label">
+        Image
+      </span>
       <div className="flex flex-col gap-3 sm:flex-row">
         {materiel.imageUrl && (
-          <VisuelMateriel nom={materiel.nom} imageUrl={materiel.imageUrl} className="w-40 rounded-md border" />
+          <VisuelMateriel
+            nom={materiel.nom}
+            imageUrl={materiel.imageUrl}
+            className="w-40 rounded-md border"
+          />
         )}
         <div
           role="button"
@@ -60,16 +67,27 @@ export function ZoneImage({ materiel }) {
           aria-describedby="aide-image"
           onClick={() => champ.current?.click()}
           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && champ.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setSurvol(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setSurvol(true);
+          }}
           onDragLeave={() => setSurvol(false)}
-          onDrop={(e) => { e.preventDefault(); setSurvol(false); envoyer(e.dataTransfer.files[0]); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setSurvol(false);
+            envoyer(e.dataTransfer.files[0]);
+          }}
           className={cn(
             'flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-input bg-background p-6 text-center',
             survol && 'border-primary bg-primary-subtle',
           )}
         >
           <span className="grid size-10 place-items-center rounded-md border bg-card text-muted-strong">
-            {envoi.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" aria-hidden="true" />}
+            {envoi.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Upload className="size-4" aria-hidden="true" />
+            )}
           </span>
           <span className="text-small">
             <b className="font-medium text-primary">Choisir un fichier</b> ou glisser-déposer ici

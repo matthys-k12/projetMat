@@ -17,9 +17,18 @@ import { ControleSegmente } from '@/components/communs/ControleSegmente';
 import { Pagination } from '@/components/communs/Pagination';
 import { formaterDateRelative, pluriel } from '@/lib/formatage';
 import { cn } from '@/lib/utils';
-import { useMarquerCommeLue, useMarquerToutesCommeLues, useNombreNonLues, useNotifications } from './hooks';
+import {
+  useMarquerCommeLue,
+  useMarquerToutesCommeLues,
+  useNombreNonLues,
+  useNotifications,
+} from './hooks';
 
-const ICONES = { REQUEST_APPROVED: CircleCheck, REQUEST_REJECTED: CircleX, REQUEST_FULFILLED: PackageCheck };
+const ICONES = {
+  REQUEST_APPROVED: CircleCheck,
+  REQUEST_REJECTED: CircleX,
+  REQUEST_FULFILLED: PackageCheck,
+};
 
 export function PageNotifications() {
   const [filtre, setFiltre] = useState('toutes');
@@ -32,7 +41,9 @@ export function PageNotifications() {
 
   async function toutMarquer() {
     const { nombre } = await marquerToutes.mutateAsync();
-    toast.success(`${pluriel(nombre, 'notification')} marquée${nombre > 1 ? 's' : ''} comme lue${nombre > 1 ? 's' : ''}`);
+    toast.success(
+      `${pluriel(nombre, 'notification')} marquée${nombre > 1 ? 's' : ''} comme lue${nombre > 1 ? 's' : ''}`,
+    );
   }
 
   /** @param {import('./api').Notification} notification */
@@ -45,9 +56,17 @@ export function PageNotifications() {
     <>
       <EnTetePage
         titre="Notifications"
-        description={nonLues > 0 ? `${pluriel(nonLues, 'notification non lue', 'notifications non lues')}.` : 'Tout est lu.'}
+        description={
+          nonLues > 0
+            ? `${pluriel(nonLues, 'notification non lue', 'notifications non lues')}.`
+            : 'Tout est lu.'
+        }
         actions={
-          <Button variant="outline" disabled={nonLues === 0 || marquerToutes.isPending} onClick={toutMarquer}>
+          <Button
+            variant="outline"
+            disabled={nonLues === 0 || marquerToutes.isPending}
+            onClick={toutMarquer}
+          >
             <CheckCheck aria-hidden="true" /> Tout marquer comme lu
           </Button>
         }
@@ -69,7 +88,11 @@ export function PageNotifications() {
         {requete.isPending && <div aria-busy="true" className="h-48 animate-pulse bg-muted" />}
         {requete.isError && <EtatErreur erreur={requete.error} surReessayer={requete.refetch} />}
         {requete.isSuccess && requete.data.data.length === 0 && (
-          <EtatVide icone={Bell} titre="Aucune notification" description="Vous serez prévenu ici quand une demande change de statut." />
+          <EtatVide
+            icone={Bell}
+            titre="Aucune notification"
+            description="Vous serez prévenu ici quand une demande change de statut."
+          />
         )}
         {requete.isSuccess && requete.data.data.length > 0 && (
           <>
@@ -86,13 +109,19 @@ export function PageNotifications() {
                       {notification.lue ? (
                         <span />
                       ) : (
-                        <span className="mt-3 size-2 rounded-full bg-primary" role="img" aria-label="Non lue" />
+                        <span
+                          className="mt-3 size-2 rounded-full bg-primary"
+                          role="img"
+                          aria-label="Non lue"
+                        />
                       )}
                       <span className="grid size-8 place-items-center rounded-full bg-muted">
                         <Icone className="size-4" aria-hidden="true" />
                       </span>
                       <span>
-                        <span className={cn('block', !notification.lue && 'font-semibold')}>{notification.titre}</span>
+                        <span className={cn('block', !notification.lue && 'font-semibold')}>
+                          {notification.titre}
+                        </span>
                         <span className="mt-0.5 block text-small">{notification.message}</span>
                         <span className="mt-1 block text-caption text-muted-foreground sm:hidden">
                           {formaterDateRelative(notification.dateCreation)}

@@ -36,13 +36,18 @@ export function PageMesDemandes() {
 
   const ongletActif = ONGLETS_DEMANDES.find((o) => o.valeur === onglet) ?? ONGLETS_DEMANDES[0];
   const statistiques = useMesStatistiques();
-  const requete = useMesDemandes({ page, status: ongletActif.statuts, search: recherche || undefined });
+  const requete = useMesDemandes({
+    page,
+    status: ongletActif.statuts,
+    search: recherche || undefined,
+  });
 
   /** @param {Record<string, string>} modifications */
   function modifier(modifications) {
     const suivants = { onglet, search: recherche, page: '1', ...modifications };
     const nettoyes = Object.entries(suivants).filter(
-      ([cle, valeur]) => valeur && !(cle === 'onglet' && valeur === 'toutes') && !(cle === 'page' && valeur === '1'),
+      ([cle, valeur]) =>
+        valeur && !(cle === 'onglet' && valeur === 'toutes') && !(cle === 'page' && valeur === '1'),
     );
     setParametresUrl(Object.fromEntries(nettoyes));
   }

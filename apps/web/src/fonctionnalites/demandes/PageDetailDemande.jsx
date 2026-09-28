@@ -31,13 +31,22 @@ export function PageDetailDemande() {
 
   return (
     <>
-      <Link to="/requests" className="flex items-center gap-1.5 self-start text-small text-primary hover:underline">
+      <Link
+        to="/requests"
+        className="flex items-center gap-1.5 self-start text-small text-primary hover:underline"
+      >
         <ArrowLeft className="size-4" aria-hidden="true" /> Mes demandes
       </Link>
-      {requete.isPending && <div aria-busy="true" className="h-64 animate-pulse rounded-lg bg-muted" />}
+      {requete.isPending && (
+        <div aria-busy="true" className="h-64 animate-pulse rounded-lg bg-muted" />
+      )}
       {requete.isError && (
         <Carte>
-          <EtatErreur titre="Demande introuvable" erreur={requete.error} surReessayer={requete.refetch} />
+          <EtatErreur
+            titre="Demande introuvable"
+            erreur={requete.error}
+            surReessayer={requete.refetch}
+          />
         </Carte>
       )}
       {requete.isSuccess && <ContenuDemande demande={requete.data} />}
@@ -58,7 +67,9 @@ function ContenuDemande({ demande }) {
             <h1 className="font-mono text-[22px] font-semibold leading-8">{demande.reference}</h1>
             <BadgeStatut statut={demande.statut} />
           </div>
-          <p className="mt-1 text-muted-foreground">Créée le {formaterDateLongue(demande.dateCreation)}</p>
+          <p className="mt-1 text-muted-foreground">
+            Créée le {formaterDateLongue(demande.dateCreation)}
+          </p>
         </div>
         {peutAnnuler && (
           <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card p-4 sm:static sm:border-0 sm:bg-transparent sm:p-0">
@@ -110,7 +121,11 @@ function BoutonAnnulation({ demande }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="dangerOutline" className="h-11 w-full sm:h-9 sm:w-auto" disabled={annulation.isPending}>
+        <Button
+          variant="dangerOutline"
+          className="h-11 w-full sm:h-9 sm:w-auto"
+          disabled={annulation.isPending}
+        >
           {annulation.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
           Annuler la demande
         </Button>

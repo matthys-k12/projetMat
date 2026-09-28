@@ -13,6 +13,9 @@ export default defineConfig({
     alias: { '@': path.resolve(dossier, 'src') },
   },
   server: { port: 5173 },
+  // Le paquet principal (~540 ko : React, Radix, supabase-js) est chargé par tous les écrans ;
+  // l'administration et Recharts sont déjà découpés à part (voir app/routeur.jsx).
+  build: { chunkSizeWarningLimit: 600 },
   test: {
     environment: 'jsdom',
     globals: true,

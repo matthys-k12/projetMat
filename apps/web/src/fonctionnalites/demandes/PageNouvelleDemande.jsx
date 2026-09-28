@@ -36,7 +36,10 @@ export function PageNouvelleDemande() {
   const lignes = panier.lignes.map((ligne) => {
     const aJour = catalogue.data?.find((m) => m.id === ligne.materiel?.id);
     if (!aJour) return ligne;
-    return { ...ligne, materiel: { ...ligne.materiel, quantiteDisponible: aJour.quantiteDisponible } };
+    return {
+      ...ligne,
+      materiel: { ...ligne.materiel, quantiteDisponible: aJour.quantiteDisponible },
+    };
   });
 
   const validation = schemaNouvelleDemande.safeParse({
@@ -49,7 +52,8 @@ export function PageNouvelleDemande() {
   });
   const erreurs = extraireErreurs(validation.error);
   // Les erreurs de stock s'affichent tout de suite ; celles du motif après la première tentative
-  const nombreErreurs = Object.keys(erreurs.parLigne).length + (envoiTente && erreurs.motif ? 1 : 0);
+  const nombreErreurs =
+    Object.keys(erreurs.parLigne).length + (envoiTente && erreurs.motif ? 1 : 0);
 
   async function envoyer() {
     setEnvoiTente(true);
@@ -57,7 +61,10 @@ export function PageNouvelleDemande() {
     try {
       const demande = await creation.mutateAsync({
         motif: validation.data.motif,
-        articles: validation.data.lignes.map((l) => ({ materielId: l.materielId, quantite: l.quantite })),
+        articles: validation.data.lignes.map((l) => ({
+          materielId: l.materielId,
+          quantite: l.quantite,
+        })),
       });
       toast.success(`Demande ${demande.reference} envoyée`);
       panier.vider();
@@ -68,17 +75,26 @@ export function PageNouvelleDemande() {
   }
 
   if (catalogue.isError) {
-    return <Carte><EtatErreur erreur={catalogue.error} surReessayer={catalogue.refetch} /></Carte>;
+    return (
+      <Carte>
+        <EtatErreur erreur={catalogue.error} surReessayer={catalogue.refetch} />
+      </Carte>
+    );
   }
 
   return (
     <>
-      <EnTetePage titre="Nouvelle demande" description="Ajoutez un ou plusieurs matériels et expliquez votre besoin." />
+      <EnTetePage
+        titre="Nouvelle demande"
+        description="Ajoutez un ou plusieurs matériels et expliquez votre besoin."
+      />
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_340px]">
         <div className="flex flex-col gap-6">
           <Carte>
             <EnTeteCarte titre="Matériels">
-              <span className="text-small text-muted-foreground">{pluriel(lignes.length, 'ligne')}</span>
+              <span className="text-small text-muted-foreground">
+                {pluriel(lignes.length, 'ligne')}
+              </span>
             </EnTeteCarte>
             {lignes.length === 0 && (
               <p className="px-5 py-6 text-muted-foreground">
@@ -95,7 +111,12 @@ export function PageNouvelleDemande() {
                 erreur={erreurs.parLigne[index]}
                 surChangerMateriel={(m) =>
                   panier.modifier(ligne.cle, {
-                    materiel: { id: m.id, nom: m.nom, categorie: m.categorie?.nom ?? null, quantiteDisponible: m.quantiteDisponible },
+                    materiel: {
+                      id: m.id,
+                      nom: m.nom,
+                      categorie: m.categorie?.nom ?? null,
+                      quantiteDisponible: m.quantiteDisponible,
+                    },
                   })
                 }
                 surChangerQuantite={(quantite) => panier.modifier(ligne.cle, { quantite })}
@@ -103,7 +124,12 @@ export function PageNouvelleDemande() {
               />
             ))}
             <div className="border-t px-5 py-3">
-              <Button variant="ghost" size="sm" className="text-primary" onClick={panier.ajouterLigneVide}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary"
+                onClick={panier.ajouterLigneVide}
+              >
                 <Plus aria-hidden="true" /> Ajouter un matériel
               </Button>
             </div>
@@ -118,16 +144,30 @@ export function PageNouvelleDemande() {
               aide="Soyez précis : cela accélère la validation."
             >
               {(attributs) => (
-                <Textarea {...attributs} rows={4} maxLength={MOTIF_MAX} value={motif} onChange={(e) => setMotif(e.target.value)} />
+                <Textarea
+                  {...attributs}
+                  rows={4}
+                  maxLength={MOTIF_MAX}
+                  value={motif}
+                  onChange={(e) => setMotif(e.target.value)}
+                />
               )}
             </ChampFormulaire>
-            <div className="chiffres mt-1 text-right text-caption text-muted-foreground" aria-live="polite">
+            <div
+              className="chiffres mt-1 text-right text-caption text-muted-foreground"
+              aria-live="polite"
+            >
               {motif.length} / {MOTIF_MAX}
             </div>
           </Carte>
         </div>
 
-        <ResumeDemande lignes={lignes} nombreErreurs={nombreErreurs} envoiEnCours={creation.isPending} surEnvoyer={envoyer} />
+        <ResumeDemande
+          lignes={lignes}
+          nombreErreurs={nombreErreurs}
+          envoiEnCours={creation.isPending}
+          surEnvoyer={envoyer}
+        />
       </div>
     </>
   );

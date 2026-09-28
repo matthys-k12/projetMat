@@ -59,13 +59,22 @@ export function EnTeteApp({ surOuvrirMenu }) {
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-16 lg:px-8">
       <div className="flex items-center gap-2 lg:hidden">
-        <Button variant="ghost" size="icon" className="size-11" aria-label="Ouvrir le menu" onClick={surOuvrirMenu}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-11"
+          aria-label="Ouvrir le menu"
+          onClick={surOuvrirMenu}
+        >
           <Menu className="size-5" />
         </Button>
         <Logo />
       </div>
 
-      <nav aria-label="Fil d'Ariane" className="hidden items-center gap-1.5 text-small text-muted-foreground lg:flex">
+      <nav
+        aria-label="Fil d'Ariane"
+        className="hidden items-center gap-1.5 text-small text-muted-foreground lg:flex"
+      >
         {fil.map((libelle, index) => {
           const dernier = index === fil.length - 1;
           return (
@@ -84,12 +93,7 @@ export function EnTeteApp({ surOuvrirMenu }) {
       </nav>
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          asChild
-          className="relative size-11 lg:size-9"
-        >
+        <Button variant="ghost" size="icon" asChild className="relative size-11 lg:size-9">
           <Link to="/notifications" aria-label={`Notifications, ${nonLues} non lues`}>
             <Bell />
             {nonLues > 0 && (

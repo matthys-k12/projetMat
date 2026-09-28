@@ -21,7 +21,12 @@ export function Carte({ as: Balise = 'section', className, children, ...reste })
  */
 export function EnTeteCarte({ titre, children, className }) {
   return (
-    <div className={cn('flex flex-wrap items-center justify-between gap-4 border-b px-5 py-4', className)}>
+    <div
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-4 border-b px-5 py-4',
+        className,
+      )}
+    >
       {titre && <h2 className="text-h3">{titre}</h2>}
       {children}
     </div>
@@ -45,7 +50,14 @@ export function Alerte({ ton = 'danger', icone: Icone, children, className }) {
       ? 'border-destructive-border bg-destructive-subtle text-destructive-text'
       : 'border-warning-border bg-warning-subtle text-warning-text';
   return (
-    <div role="alert" className={cn('flex items-start gap-2.5 rounded-md border px-3.5 py-3 text-small', classes, className)}>
+    <div
+      role="alert"
+      className={cn(
+        'flex items-start gap-2.5 rounded-md border px-3.5 py-3 text-small',
+        classes,
+        className,
+      )}
+    >
       <Icone className="mt-px size-4 shrink-0" aria-hidden="true" />
       <div>{children}</div>
     </div>

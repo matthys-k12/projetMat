@@ -7,7 +7,17 @@
  * la couleur de la série), infobulle au survol, et un tableau masqué pour les
  * lecteurs d'écran (la donnée n'est jamais portée par le graphique seul).
  */
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { format } from 'date-fns';
 
 const PRIMAIRE = 'hsl(221.2 83.2% 53.3%)';
@@ -62,7 +72,13 @@ export function CourbeQuatorzeJours({ jours }) {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={donnees} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
             <CartesianGrid stroke={GRILLE} vertical={false} />
-            <XAxis dataKey="jour" tick={AXE} tickLine={false} axisLine={{ stroke: GRILLE }} interval="preserveStartEnd" />
+            <XAxis
+              dataKey="jour"
+              tick={AXE}
+              tickLine={false}
+              axisLine={{ stroke: GRILLE }}
+              interval="preserveStartEnd"
+            />
             <YAxis allowDecimals={false} tick={AXE} tickLine={false} axisLine={false} />
             <Tooltip content={<Infobulle unite="demandes" />} cursor={{ stroke: GRILLE }} />
             <Line
@@ -71,12 +87,16 @@ export function CourbeQuatorzeJours({ jours }) {
               stroke={PRIMAIRE}
               strokeWidth={2}
               dot={false}
+              isAnimationActive={false}
               activeDot={{ r: 4, stroke: 'white', strokeWidth: 2 }}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <TableauAccessible legende="Demandes par jour" lignes={donnees.map((d) => [d.jour, d.nombre])} />
+      <TableauAccessible
+        legende="Demandes par jour"
+        lignes={donnees.map((d) => [d.jour, d.nombre])}
+      />
     </>
   );
 }
@@ -89,16 +109,46 @@ export function BarresTopMateriels({ materiels }) {
     <>
       <div className="h-[240px]" aria-hidden="true">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={materiels} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }} barCategoryGap={10}>
+          <BarChart
+            data={materiels}
+            layout="vertical"
+            margin={{ top: 0, right: 16, bottom: 0, left: 0 }}
+            barCategoryGap={10}
+          >
             <CartesianGrid stroke={GRILLE} horizontal={false} />
-            <XAxis type="number" allowDecimals={false} tick={AXE} tickLine={false} axisLine={false} />
-            <YAxis type="category" dataKey="nom" width={140} tick={AXE} tickLine={false} axisLine={false} />
-            <Tooltip content={<Infobulle unite="unités demandées" />} cursor={{ fill: 'hsl(210 40% 96.1%)' }} />
-            <Bar dataKey="totalDemande" fill={PRIMAIRE} radius={[0, 4, 4, 0]} maxBarSize={18} />
+            <XAxis
+              type="number"
+              allowDecimals={false}
+              tick={AXE}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="nom"
+              width={140}
+              tick={AXE}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip
+              content={<Infobulle unite="unités demandées" />}
+              cursor={{ fill: 'hsl(210 40% 96.1%)' }}
+            />
+            <Bar
+              dataKey="totalDemande"
+              fill={PRIMAIRE}
+              radius={[0, 4, 4, 0]}
+              maxBarSize={18}
+              isAnimationActive={false}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <TableauAccessible legende="Unités demandées par matériel" lignes={materiels.map((m) => [m.nom, m.totalDemande])} />
+      <TableauAccessible
+        legende="Unités demandées par matériel"
+        lignes={materiels.map((m) => [m.nom, m.totalDemande])}
+      />
     </>
   );
 }

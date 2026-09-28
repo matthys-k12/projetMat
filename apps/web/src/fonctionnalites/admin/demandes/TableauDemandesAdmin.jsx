@@ -10,7 +10,8 @@ import { Avatar } from '@/components/communs/Avatar';
 import { BadgeStatut } from '@/components/communs/BadgeStatut';
 import { formaterDate, pluriel } from '@/lib/formatage';
 
-const TH = 'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
+const TH =
+  'h-10 bg-background px-4 text-left text-caption font-medium text-muted-foreground first:pl-5 last:pr-5';
 const TD = 'h-12 border-t px-4 first:pl-5 last:pr-5';
 
 /**
@@ -36,14 +37,18 @@ export function TableauDemandesAdmin({ demandes }) {
           {demandes.map((demande) => (
             <tr key={demande.id} className="hover:bg-background">
               <td className={TD}>
-                <span className="font-mono text-small font-medium">{demande.reference}</span>
+                <span className="whitespace-nowrap font-mono text-small font-medium">
+                  {demande.reference}
+                </span>
               </td>
               <td className={TD}>
                 <span className="flex items-center gap-2.5">
                   <Avatar nom={demande.demandeur?.nomComplet ?? '?'} />
                   <span className="flex flex-col">
                     <span className="font-medium">{demande.demandeur?.nomComplet}</span>
-                    <span className="text-caption text-muted-foreground">{demande.demandeur?.email}</span>
+                    <span className="text-caption text-muted-foreground">
+                      {demande.demandeur?.email}
+                    </span>
                   </span>
                 </span>
               </td>
@@ -54,7 +59,10 @@ export function TableauDemandesAdmin({ demandes }) {
               </td>
               <td className={`${TD} w-px text-right`}>
                 <Button variant="outline" size="sm" asChild>
-                  <Link to={`/admin/requests/${demande.id}`} aria-label={`Examiner ${demande.reference}`}>
+                  <Link
+                    to={`/admin/requests/${demande.id}`}
+                    aria-label={`Examiner ${demande.reference}`}
+                  >
                     Examiner
                   </Link>
                 </Button>
@@ -67,11 +75,16 @@ export function TableauDemandesAdmin({ demandes }) {
       <ul className="divide-y md:hidden">
         {demandes.map((demande) => (
           <li key={demande.id}>
-            <Link to={`/admin/requests/${demande.id}`} className="flex min-h-touch items-center gap-3 px-4 py-3">
+            <Link
+              to={`/admin/requests/${demande.id}`}
+              className="flex min-h-touch items-center gap-3 px-4 py-3"
+            >
               <Avatar nom={demande.demandeur?.nomComplet ?? '?'} />
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-small font-medium">{demande.reference}</span>
+                  <span className="whitespace-nowrap font-mono text-small font-medium">
+                    {demande.reference}
+                  </span>
                   <BadgeStatut statut={demande.statut} />
                 </div>
                 <span className="text-caption text-muted-foreground">

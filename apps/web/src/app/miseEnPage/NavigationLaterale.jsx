@@ -65,11 +65,16 @@ function LienNavigation({ lien, mobile, surNavigation, nonLues }) {
         cn(
           'group flex items-center gap-2.5 rounded-md px-2.5 text-sm font-medium',
           mobile ? 'h-11' : 'h-9',
-          isActive ? 'bg-muted text-foreground' : 'text-muted-strong hover:bg-background hover:text-foreground',
+          isActive
+            ? 'bg-muted text-foreground'
+            : 'text-muted-strong hover:bg-background hover:text-foreground',
         )
       }
     >
-      <Icone className="size-4 text-muted-foreground group-aria-[current=page]:text-foreground" aria-hidden="true" />
+      <Icone
+        className="size-4 text-muted-foreground group-aria-[current=page]:text-foreground"
+        aria-hidden="true"
+      />
       <span>{lien.libelle}</span>
       {lien.compteur && nonLues > 0 && (
         <span
@@ -98,16 +103,29 @@ export function NavigationLaterale({ mobile = false, surNavigation }) {
 
       <nav aria-label="Navigation principale" className="flex flex-col gap-0.5">
         {LIENS_UTILISATEUR.map((lien) => (
-          <LienNavigation key={lien.vers} lien={lien} mobile={mobile} surNavigation={surNavigation} nonLues={nonLues} />
+          <LienNavigation
+            key={lien.vers}
+            lien={lien}
+            mobile={mobile}
+            surNavigation={surNavigation}
+            nonLues={nonLues}
+          />
         ))}
       </nav>
 
       {estAdmin && (
         <>
-          <div className="px-2 pb-1.5 pt-4 text-caption font-medium text-muted-foreground">Administration</div>
+          <div className="px-2 pb-1.5 pt-4 text-caption font-medium text-muted-foreground">
+            Administration
+          </div>
           <nav aria-label="Administration" className="flex flex-col gap-0.5">
             {LIENS_ADMIN.map((lien) => (
-              <LienNavigation key={lien.vers} lien={lien} mobile={mobile} surNavigation={surNavigation} />
+              <LienNavigation
+                key={lien.vers}
+                lien={lien}
+                mobile={mobile}
+                surNavigation={surNavigation}
+              />
             ))}
           </nav>
         </>

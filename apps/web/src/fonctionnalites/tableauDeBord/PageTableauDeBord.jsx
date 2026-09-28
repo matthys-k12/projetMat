@@ -44,7 +44,11 @@ export function PageTableauDeBord() {
       />
 
       <BandeIndicateurs>
-        <CarteIndicateur libelle="Total" valeur={stats?.total ?? '–'} precision="demandes envoyées" />
+        <CarteIndicateur
+          libelle="Total"
+          valeur={stats?.total ?? '–'}
+          precision="demandes envoyées"
+        />
         <CarteIndicateur
           libelle="En attente"
           pastille="bg-warning"

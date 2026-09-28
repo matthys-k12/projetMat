@@ -4,7 +4,13 @@
  * Tier : présentation.
  */
 import { ArrowUpDown } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ChampRecherche } from '@/components/communs/ChampRecherche';
 import { ControleSegmente } from '@/components/communs/ControleSegmente';
 import { useCategories } from './hooks';
@@ -34,8 +40,8 @@ export function FiltresCatalogue({ filtres, surChangement, total }) {
   const { data: categories = [] } = useCategories();
 
   return (
-    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
+    <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
+      <div className="contents">
         <ChampRecherche
           id="recherche-materiel"
           libelle="Rechercher un matériel"
@@ -65,16 +71,20 @@ export function FiltresCatalogue({ filtres, surChangement, total }) {
           className="h-11 w-full overflow-x-auto md:h-9 md:w-auto"
         />
       </div>
-      <div className="flex items-center justify-between gap-3">
-        <span className="chiffres text-small text-muted-foreground">
+      <div className="flex items-center justify-between gap-3 md:ml-auto">
+        <span className="chiffres whitespace-nowrap text-small text-muted-foreground">
           {total !== undefined && `${total} matériel${total > 1 ? 's' : ''}`}
         </span>
         <Select value={filtres.sort} onValueChange={(sort) => surChangement({ sort })}>
-          <SelectTrigger className="h-11 w-[200px] bg-card md:h-9" aria-label="Trier par">
-            <span className="flex items-center gap-2">
-              <ArrowUpDown className="size-4 text-muted-foreground" aria-hidden="true" />
-              <SelectValue />
-            </span>
+          <SelectTrigger
+            className="h-11 w-[200px] justify-start bg-card md:h-9 [&>svg:last-child]:ml-auto"
+            aria-label="Trier par"
+          >
+            <ArrowUpDown
+              className="mr-2 size-4 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {OPTIONS_TRI.map((option) => (
