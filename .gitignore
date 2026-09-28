@@ -11,3 +11,8 @@ coverage/
 .DS_Store
 .vscode/
 .idea/
+
+# Fichiers de travail locaux (non publiés)
+PROMPT_CLAUDE_CODE.md
+CLAUDE.md
+design/
