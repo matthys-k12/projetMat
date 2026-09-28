@@ -1,0 +1,80 @@
+/* Styles globaux : variables du design system (design/implementation.md) + Tailwind. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* shadcn/ui */
+    --background: 210 40% 98%; /* #f8fafc */
+    --foreground: 222.2 47.4% 11.2%; /* #0f172a */
+    --card: 0 0% 100%; /* #ffffff */
+    --card-foreground: 222.2 47.4% 11.2%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+    --primary: 221.2 83.2% 53.3%; /* #2563eb */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%; /* #f1f5f9 */
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748b */
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 72.2% 50.6%; /* #dc2626 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%; /* #e2e8f0 */
+    --input: 216 16.4% 58.2%; /* #8391a6 — contraste 3.2:1 (WCAG 1.4.11) */
+    --ring: 221.2 83.2% 53.3%;
+    /* IT Request — extensions */
+    --primary-hover: 224.3 76.3% 48%;
+    --primary-subtle: 213.8 100% 96.9%;
+    --primary-text: 224.3 76.3% 48%;
+    --primary-border: 213.3 96.9% 87.3%;
+    --muted-strong: 215.3 19.3% 34.5%; /* #475569 */
+    --success: 142.1 76.2% 36.3%;
+    --success-subtle: 138.5 76.5% 96.7%;
+    --success-text: 142.4 71.8% 29.2%;
+    --success-border: 141 78.9% 85.1%;
+    --warning: 32.1 94.6% 43.7%;
+    --warning-subtle: 48 100% 96.1%;
+    --warning-text: 26 90.5% 37.1%;
+    --warning-border: 48 96.6% 76.7%;
+    --danger-subtle: 0 85.7% 97.3%;
+    --danger-text: 0 73.7% 41.8%;
+    --danger-border: 0 96.3% 89.4%;
+    --neutral-dot: 215 20.2% 65.1%;
+    --panel: 222.2 47.4% 11.2%;
+    --panel-foreground: 210 40% 98%;
+    --panel-muted: 215 20.2% 65.1%;
+    --radius: 0.625rem; /* 10px : cartes, dialogs (rounded-lg) ; rounded-md = 6px */
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans text-sm antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer utilities {
+  /* Chiffres alignés dans les tableaux et KPI */
+  .chiffres {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Accessibilité : animations coupées si l'utilisateur le demande */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

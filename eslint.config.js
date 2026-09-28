@@ -18,7 +18,7 @@ export default [
       globals: { ...globals.node },
     },
     rules: {
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^(_|React$)' }],
     },
   },
   {
@@ -32,7 +32,9 @@ export default [
     rules: {
       ...react.configs.recommended.rules,
       ...react.configs['jsx-runtime'].rules,
-      ...reactHooks.configs.recommended.rules,
+      // Règles classiques des hooks (pas les règles du React Compiler, non utilisé ici)
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
       // Pas de TypeScript : les props sont documentées en JSDoc, pas via prop-types.
       'react/prop-types': 'off',
     },
