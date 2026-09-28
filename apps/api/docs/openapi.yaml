@@ -66,6 +66,29 @@ paths:
       responses:
         '204': { description: Déconnecté }
         '401': { $ref: '#/components/responses/NonAuthentifie' }
+  /auth/password:
+    post:
+      tags: [Authentification]
+      summary: Remplace le mot de passe (obligatoire après création du compte par un admin)
+      description: |
+        Règles : 10 caractères minimum, une majuscule, un chiffre, différent du mot de passe actuel.
+        Tant que `doitChangerMotDePasse` est vrai, toutes les autres routes (sauf /auth/me et
+        /auth/logout) répondent 403 PASSWORD_CHANGE_REQUIRED.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nouveauMotDePasse]
+              properties: { nouveauMotDePasse: { type: string, minLength: 10, maxLength: 72 } }
+      responses:
+        '200':
+          description: Profil mis à jour (doitChangerMotDePasse = false)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profil' }
+        '422': { $ref: '#/components/responses/Invalide' }
 
   /materials:
     get:
@@ -518,7 +541,7 @@ paths:
         - {
             name: entityType,
             in: query,
-            schema: { type: string, enum: [request, material, category] },
+            schema: { type: string, enum: [request, material, category, user] },
           }
       responses:
         '200':
@@ -531,6 +554,97 @@ paths:
                   - type: object
                     properties:
                       data: { type: array, items: { $ref: '#/components/schemas/Audit' } }
+
+  /admin/users:
+    get:
+      tags: [Admin — Utilisateurs]
+      summary: Liste des comptes
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limite'
+        - { name: search, in: query, schema: { type: string }, description: Nom ou e-mail }
+        - { name: role, in: query, schema: { type: string, enum: [USER, ADMIN] } }
+        - { name: active, in: query, schema: { type: string, enum: ['true', 'false'] } }
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Meta'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/Profil' } }
+        '403': { $ref: '#/components/responses/Interdit' }
+    post:
+      tags: [Admin — Utilisateurs]
+      summary: Crée un compte avec un mot de passe temporaire (pas d'inscription libre)
+      description: |
+        Le mot de passe temporaire (16 caractères aléatoires) n'est renvoyé qu'ici, une seule fois,
+        et n'est stocké nulle part en clair. Audit USER_CREATED (sans le mot de passe).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prenom, nom, email]
+              properties:
+                prenom: { type: string, maxLength: 100 }
+                nom: { type: string, maxLength: 100 }
+                email: { type: string, format: email }
+                role: { type: string, enum: [USER, ADMIN], default: USER }
+      responses:
+        '201':
+          description: Compte créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  utilisateur: { $ref: '#/components/schemas/Profil' }
+                  motDePasseTemporaire: { type: string, example: 'k7#Rv2mQ-xW9pLt4' }
+        '409': { $ref: '#/components/responses/Conflit' }
+        '422': { $ref: '#/components/responses/Invalide' }
+  /admin/users/{id}/status:
+    patch:
+      tags: [Admin — Utilisateurs]
+      summary: Active / désactive un compte (profiles.active + bannissement Supabase Auth)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CorpsStatut' }
+      responses:
+        '200':
+          description: Compte mis à jour
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profil' }
+        '409': { description: SELF_LOCKOUT — un admin ne peut pas se désactiver lui-même }
+  /admin/users/{id}/role:
+    patch:
+      tags: [Admin — Utilisateurs]
+      summary: Change le rôle d'un compte
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties: { role: { type: string, enum: [USER, ADMIN] } }
+      responses:
+        '200':
+          description: Compte mis à jour
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profil' }
+        '409':
+          { description: SELF_LOCKOUT — un admin ne peut pas se retirer son propre rôle ADMIN }
 
 components:
   securitySchemes:
@@ -595,6 +709,9 @@ components:
         nomComplet: { type: string }
         role: { type: string, enum: [USER, ADMIN] }
         actif: { type: boolean }
+        doitChangerMotDePasse:
+          { type: boolean, description: Vrai tant que le mot de passe temporaire n'est pas remplacé }
+        dateCreation: { type: string, format: date-time }
     Categorie:
       type: object
       properties:

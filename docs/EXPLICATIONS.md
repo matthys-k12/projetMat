@@ -117,6 +117,44 @@ Pourquoi c'est sûr :
 - **Voir la demande d'un autre** : `GET /requests/:id` répond **404** (et non 403) pour ne pas
   révéler qu'elle existe.
 
+### Création des comptes : pas d'inscription libre
+
+Dans une organisation, c'est l'organisation qui attribue les accès. Il n'y a **aucune page
+d'inscription**, et l'option *Allow new users to sign up* est **désactivée dans Supabase** :
+même avec la clé anon, `supabase.auth.signUp()` est refusé.
+
+Parcours, fichier par fichier :
+1. **`admin/utilisateurs/DialogueCreationUtilisateur.jsx`** → `POST /admin/users`
+   (`exigerRole('ADMIN')`, validation zod).
+2. **`modules/utilisateurs/utilisateurs.service.js` → `creerUtilisateur()`** :
+   - `utils/motDePasse.js` génère un mot de passe de 16 caractères avec `crypto.randomInt`
+     (générateur cryptographique, contrairement à `Math.random`) ;
+   - `supabase.auth.admin.createUser` avec `email_confirm: true` ; le trigger SQL crée le profil ;
+   - le service fixe le rôle et `must_change_password = true` (si ça échoue, le compte Auth est
+     supprimé pour ne rien laisser à moitié créé) ;
+   - audit `USER_CREATED` **sans** le mot de passe ; réponse `Cache-Control: no-store`.
+3. **`DialogueMotDePasseTemporaire.jsx`** affiche le mot de passe **une seule fois** (bouton
+   copier) : il n'existe qu'en mémoire dans ce dialog, nulle part en base en clair.
+4. À la première connexion, **`middlewares/authentification.js`** voit `must_change_password`
+   et répond **403 `PASSWORD_CHANGE_REQUIRED`** à toutes les routes sauf `/auth/me`,
+   `/auth/password` et `/auth/logout`. Côté front, `GardeConnexion.jsx` redirige vers
+   `/change-password` (et `clientApi.js` aussi, par sécurité).
+5. **`POST /auth/password`** (`auth.service.js`) : règles zod (10 caractères, majuscule,
+   chiffre), refus si identique à l'actuel (on tente une connexion avec le nouveau mot de passe
+   via un client jetable), `auth.admin.updateUserById`, puis `must_change_password = false`.
+
+**Pourquoi ce circuit ?** L'admin ne connaît jamais le mot de passe définitif : une action du
+journal d'audit est attribuable au titulaire du compte, pas à l'admin qui l'a créé.
+
+**Désactivation** : `profiles.active = false` (l'API refuse les requêtes) **et**
+`ban_duration: "876000h"` dans Supabase Auth (plus de connexion possible). Un admin ne peut
+ni se désactiver ni se retirer le rôle ADMIN (**409 `SELF_LOCKOUT`**) : sinon le dernier admin
+pourrait bloquer toute l'organisation.
+
+**Évolution naturelle : le SSO** (Microsoft Entra ID / Google Workspace, SAML ou OIDC, supporté
+par Supabase). Plus aucun mot de passe dans l'application, et le départ d'un salarié coupe ses
+accès automatiquement.
+
 ---
 
 ## 4. Organisation des dossiers et rôle de chaque couche
@@ -150,7 +188,7 @@ supabase/migrations      schéma, fonctions RPC, sécurité (RLS)
 
 ---
 
-## 5. Dix questions probables et réponses courtes
+## 5. Questions probables et réponses courtes
 
 1. **Pourquoi Express et pas NestJS ?**
    En JavaScript sans TypeScript, NestJS perd l'essentiel de son intérêt (décorateurs, injection
@@ -188,4 +226,14 @@ supabase/migrations      schéma, fonctions RPC, sécurité (RLS)
 
 10. **Qu'amélioreriez-vous avec plus de temps ?**
     Réaligner les fichiers de migration sur la base déployée, rendre l'audit des matériels
-    atomique (RPC), ajouter Playwright et une CI GitHub Actions, notifications temps réel.
+    atomique (RPC), ajouter Playwright et une CI GitHub Actions, notifications temps réel,
+    et le SSO d'entreprise à la place des mots de passe.
+
+11. **Pourquoi l'admin ne choisit-il pas le mot de passe du collaborateur ?**
+    Parce qu'il pourrait alors agir en son nom. Le mot de passe temporaire est aléatoire,
+    affiché une fois, et doit être remplacé avant toute action : l'admin ne connaît jamais le
+    mot de passe définitif, et l'audit reste fiable.
+
+12. **Pourquoi pas de page « Créer un compte » ?**
+    Dans une organisation, les accès sont attribués, pas demandés. Les inscriptions sont aussi
+    coupées dans Supabase, sinon n'importe qui pourrait appeler `signUp` avec la clé publique.

@@ -34,7 +34,10 @@
 | suivre ses demandes et leur historique | **refuser** une demande (motif obligatoire) |
 | annuler une demande tant qu'elle est en attente | marquer le matériel comme **remis** |
 | recevoir une notification à chaque décision | gérer le matériel, les catégories et les stocks |
+| | **créer les comptes** des collaborateurs, les désactiver, changer leur rôle |
 | | consulter les statistiques et le journal d'audit |
+
+**Pas d'inscription libre :** c'est l'administrateur qui crée les comptes (voir [section 7](#personne-ne-peut-se-créer-un-compte-seul)).
 
 **Le cycle de vie d'une demande :**
 
@@ -67,7 +70,7 @@ supabase link --project-ref <identifiant-du-projet>
 supabase db push
 ```
 
-Ces commandes créent toutes les tables à partir des fichiers de `supabase/migrations/`.
+Ces commandes créent toutes les tables à partir des fichiers de `supabase/migrations/` (y compris `20260928000001_must_change_password.sql`, qui ajoute l'obligation de changer le mot de passe temporaire).
 Exécutez ensuite `supabase/seed.sql` dans le **SQL Editor** de Supabase : il ajoute les catégories et le matériel.
 
 > **Important — désactiver les inscriptions libres.** Dans Supabase, allez dans *Authentication → Sign In / Providers* et désactivez « Allow new users to sign up ». Dans une organisation, c'est l'organisation qui attribue les accès : personne ne doit pouvoir se créer un compte seul.
@@ -136,7 +139,8 @@ Des demandes existent déjà dans tous les statuts (en attente, approuvée, remi
 5. **Approuver** : le stock baisse. Tenter d'approuver à nouveau : l'application refuse (409).
 6. **Refuser une autre demande** sans motif : c'est bloqué, le motif est obligatoire.
 7. **Retour côté collaborateur** : la notification est arrivée, et la chronologie de la demande montre chaque étape.
-8. **Bonus** : réduire la fenêtre pour montrer la version mobile, puis ouvrir Swagger.
+8. **Utilisateurs** (admin) : « Ajouter un collaborateur ». Le mot de passe temporaire s'affiche **une seule fois**. Se connecter avec ce compte dans une fenêtre privée : l'application impose de choisir un nouveau mot de passe avant tout le reste.
+9. **Bonus** : réduire la fenêtre pour montrer la version mobile, puis ouvrir Swagger.
 
 ---
 
@@ -265,6 +269,18 @@ Le rôle (collaborateur ou admin) est lu dans la table `profiles`, que l'utilisa
 
 Les références `REQ-2026-000001` viennent d'une **séquence** PostgreSQL, un compteur qui ne donne jamais deux fois le même numéro, même si cent demandes arrivent en même temps. La méthode naïve (« compter les demandes et ajouter 1 ») produirait des doublons.
 
+### Personne ne peut se créer un compte seul
+
+Dans une organisation, c'est l'organisation qui attribue les accès. Il n'y a donc **aucune page d'inscription**, et les inscriptions sont **désactivées côté Supabase** (*Allow new users to sign up* décoché) : même en appelant Supabase directement, on ne peut pas se créer de compte.
+
+1. L'administrateur crée le compte (prénom, nom, e-mail, rôle) dans **Administration → Utilisateurs**.
+2. L'API génère un **mot de passe temporaire aléatoire** (16 caractères, générateur cryptographique `crypto`), l'affiche **une seule fois**, et ne le stocke nulle part en clair.
+3. À la première connexion, le collaborateur **doit** choisir son propre mot de passe (10 caractères minimum, une majuscule, un chiffre, différent du temporaire). Tant qu'il ne l'a pas fait, l'API refuse toutes les autres routes (403 `PASSWORD_CHANGE_REQUIRED`).
+
+**Pourquoi ?** L'administrateur ne connaît jamais le mot de passe définitif. Une action inscrite dans le journal d'audit est donc bien attribuable au titulaire du compte, et non à l'admin qui l'a créé.
+
+Désactiver un compte (départ d'un collaborateur) agit à deux niveaux : l'API refuse ses requêtes, et Supabase refuse sa connexion. Ses demandes et son historique sont conservés. Un administrateur ne peut ni se désactiver ni se retirer son propre rôle : cela évite de bloquer l'organisation.
+
 ### Une demande d'un autre collaborateur est « introuvable »
 
 Si un collaborateur tente d'ouvrir la demande d'un collègue, l'API répond **404 (introuvable)** et non 403 (interdit). Ainsi, on ne révèle même pas que la demande existe.
@@ -284,7 +300,8 @@ Toutes les routes commencent par `/api/v1` et demandent d'être connecté, sauf 
 | Méthode | Route | Qui | À quoi ça sert |
 |---|---|---|---|
 | GET | `/health` | tout le monde | vérifier que l'API fonctionne |
-| GET | `/auth/me` | connecté | récupérer son profil et son rôle |
+| GET | `/auth/me` | connecté | récupérer son profil, son rôle, et s'il doit changer son mot de passe |
+| POST | `/auth/password` | connecté | choisir son mot de passe (remplace le temporaire) |
 | GET | `/materials`, `/materials/:id` | connecté | catalogue (matériel actif uniquement) |
 | GET | `/categories` | connecté | catégories pour les filtres |
 | POST | `/requests` | connecté | créer une demande |
@@ -296,6 +313,9 @@ Toutes les routes commencent par `/api/v1` et demandent d'être connecté, sauf 
 | PATCH | `/admin/requests/:id/reject` | admin | refuser (motif obligatoire) |
 | PATCH | `/admin/requests/:id/fulfill` | admin | marquer comme remis |
 | GET / POST / PUT / PATCH | `/admin/materials…`, `/admin/categories…` | admin | gérer le catalogue |
+| GET | `/admin/users` | admin | liste des comptes |
+| POST | `/admin/users` | admin | créer un compte (renvoie le mot de passe temporaire une seule fois) |
+| PATCH | `/admin/users/:id/status`, `/admin/users/:id/role` | admin | désactiver / réactiver, changer le rôle |
 | GET | `/admin/dashboard`, `/admin/audit` | admin | statistiques, journal |
 
 **Format des réponses :**
@@ -316,17 +336,19 @@ Toutes les routes commencent par `/api/v1` et demandent d'être connecté, sauf 
 npm test
 ```
 
-**API — 68 tests :**
+**API — 82 tests :**
 - les 25 transitions de statut possibles et impossibles ;
 - la traduction des erreurs de la base en messages clairs et en codes HTTP ;
 - la validation des données (demande vide, quantité à zéro…) ;
 - la sécurité : sans connexion → 401, collaborateur sur une route admin → 403 ;
-- l'approbation avec un stock insuffisant → 409.
+- l'approbation avec un stock insuffisant → 409 ;
+- la gestion des comptes : mot de passe temporaire fort et unique, absent du journal d'audit, routes bloquées tant qu'il n'est pas changé, un admin ne peut pas se désactiver lui-même.
 
-**Site web — 18 tests :**
+**Site web — 23 tests :**
 - affichage des statuts en français ;
 - règles du formulaire de nouvelle demande ;
-- validation du formulaire de connexion.
+- validation du formulaire de connexion ;
+- règles du nouveau mot de passe.
 
 Le parcours complet (collaborateur puis admin, sur ordinateur et sur mobile) a aussi été vérifié à la main dans Chrome, sans aucune erreur dans la console.
 
@@ -338,13 +360,12 @@ Le parcours complet (collaborateur puis admin, sur ordinateur et sur mobile) a a
 
 - **Écart entre la base déployée et les fichiers de migration.** Sur le projet Supabase utilisé, certaines fonctions ont un nom ou un format de réponse légèrement différent de ceux décrits dans `supabase/migrations/`. L'API gère les deux cas (c'est expliqué en commentaire dans le code), mais il faudrait réaligner les fichiers de migration sur la base réelle.
 - **L'audit des modifications de matériel n'est pas atomique.** Modifier un matériel et écrire la ligne d'audit se font en deux requêtes séparées. Une fonction SQL dédiée garantirait le « tout ou rien ».
-- **Pas de gestion des utilisateurs dans l'interface** : pas de création de compte par l'admin, pas de désactivation, pas de réinitialisation du mot de passe.
+- **Mot de passe oublié** : pas encore de réinitialisation. Il faudrait une action admin qui régénère un mot de passe temporaire (même mécanisme que la création).
 - Le formulaire de nouvelle demande propose au maximum 50 matériels.
 
 ### Évolutions possibles
 
-- **Gestion des comptes par l'administrateur** : création avec mot de passe temporaire, changement obligatoire à la première connexion, désactivation d'un compte au départ d'un collaborateur.
-- **Connexion via le compte de l'entreprise** (Microsoft 365 ou Google Workspace), pour ne plus gérer de mots de passe dans l'application.
+- **Connexion unique (SSO)** avec le compte de l'entreprise (Microsoft Entra ID ou Google Workspace, via SAML ou OIDC dans Supabase) : plus aucun mot de passe géré dans l'application, et un départ de l'entreprise coupe automatiquement l'accès.
 - Notifications en temps réel (Supabase Realtime).
 - Export des demandes en CSV.
 - Tests de bout en bout automatisés (Playwright).
