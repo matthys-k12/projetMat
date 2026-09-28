@@ -109,3 +109,8 @@ export function creerApp() {
   app.use(gestionErreurs);
   return app;
 }
+
+// Export par défaut pour Vercel, qui attend une application Express exportée
+// (server.js et les tests continuent d'utiliser creerApp()).
+const app = creerApp();
+export default app;
