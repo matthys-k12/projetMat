@@ -80,6 +80,11 @@ Les RPC lèvent des exceptions dont le `message` est un code métier (le `detail
 Format d'erreur API : `{ statusCode, code, message (FR, lisible), details? }`
 Format de liste paginée : `{ data: T[], meta: { page, limite, total, totalPages } }` (limite plafonnée à 50).
 
+**Écarts constatés sur la base déployée** (le code accepte les deux variantes, ne pas « corriger » en cassant l'une) :
+- fonctions de stats nommées `user_dashboard_stats` / `admin_dashboard_stats` (pas `get_*`), JSON sans `fulfilled` → l'API lit `byStatus` (admin) et compte elle-même les statuts (collaborateur) ;
+- `create_request` renvoie `{ id, status, reference }` au lieu d'un uuid → `extraireIdDemande()` ;
+- le `details` de `INSUFFICIENT_STOCK` est un tableau JSON `[{ name, requested, available }]` → `lireDetailsRpc()`.
+
 La machine d'état est **aussi** codée en JS (`modules/demandes/machineEtat.js`) pour échouer tôt et être testée ; la base reste la garantie finale.
 Transitions autorisées : PENDING→APPROVED, PENDING→REJECTED, PENDING→CANCELLED, APPROVED→FULFILLED.
 
