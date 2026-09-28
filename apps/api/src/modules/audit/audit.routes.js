@@ -16,7 +16,7 @@ const schemaFiltresAudit = schemaPagination.extend({
     .regex(/^[A-Z_]{3,50}$/, { message: 'Action invalide.' })
     .optional(),
   entityType: z
-    .enum(['request', 'material', 'category'], { message: 'Type de ressource invalide.' })
+    .enum(['request', 'material', 'category', 'user'], { message: 'Type de ressource invalide.' })
     .optional(),
 });
 

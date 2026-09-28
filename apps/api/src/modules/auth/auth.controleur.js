@@ -7,7 +7,7 @@ import { extraireToken } from '../../middlewares/authentification.js';
 import * as serviceAuth from './auth.service.js';
 
 /**
- * GET /auth/me — profil de l'utilisateur connecté (le rôle vient de profiles).
+ * GET /auth/me — profil de l'utilisateur connecté (rôle et drapeau lus dans profiles).
  * @type {import('express').RequestHandler}
  */
 export async function lireMoi(req, res) {
@@ -22,4 +22,16 @@ export async function lireMoi(req, res) {
 export async function deconnecter(req, res) {
   await serviceAuth.revoquerSession(extraireToken(req.headers.authorization));
   res.status(204).end();
+}
+
+/**
+ * POST /auth/password — remplace le mot de passe (temporaire ou non) de l'utilisateur connecté.
+ * @type {import('express').RequestHandler}
+ */
+export async function changerMotDePasse(req, res) {
+  const profil = await serviceAuth.changerMotDePasse(
+    req.utilisateur,
+    req.donnees.body.nouveauMotDePasse,
+  );
+  res.json(profil);
 }

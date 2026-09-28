@@ -2,89 +2,120 @@
 
 **Gestion simple et centralisée des demandes de matériel informatique.**
 
-Un collaborateur consulte le catalogue (portables, écrans, accessoires…), compose une demande
-de plusieurs matériels avec un motif, puis suit son traitement. Un administrateur approuve —
-ce qui décrémente le stock de façon atomique —, refuse avec un motif obligatoire, ou marque le
-matériel comme remis. Chaque étape est historisée, notifiée et auditée.
-
 ![Catalogue](docs/captures/03-catalogue.png)
 
 ---
 
-## Architecture (3 tiers, monolithe modulaire)
+## Sommaire
+
+1. [Le projet en 30 secondes](#1-le-projet-en-30-secondes)
+2. [Lancer le projet](#2-lancer-le-projet)
+3. [Comptes de démo](#3-comptes-de-démo)
+4. [Démo en 5 minutes](#4-démo-en-5-minutes)
+5. [Comment c'est construit](#5-comment-cest-construit)
+6. [Organisation du code](#6-organisation-du-code)
+7. [Les choix techniques importants](#7-les-choix-techniques-importants)
+8. [L'API](#8-lapi)
+9. [Tests](#9-tests)
+10. [Limites connues et évolutions](#10-limites-connues-et-évolutions)
+
+---
+
+## 1. Le projet en 30 secondes
+
+**Le problème :** dans l'organisation, les demandes de matériel informatique se font à la main. On ne sait pas ce qui est disponible, les demandes se perdent et personne ne suit les stocks.
+
+**La solution :** une application web avec deux types d'utilisateurs.
+
+| Le **collaborateur** peut… | L'**administrateur** peut… |
+|---|---|
+| consulter le catalogue du matériel disponible | voir toutes les demandes |
+| faire une demande de plusieurs matériels, avec un motif | **approuver** une demande (le stock baisse automatiquement) |
+| suivre ses demandes et leur historique | **refuser** une demande (motif obligatoire) |
+| annuler une demande tant qu'elle est en attente | marquer le matériel comme **remis** |
+| recevoir une notification à chaque décision | gérer le matériel, les catégories et les stocks |
+| | consulter les statistiques et le journal d'audit |
+
+**Le cycle de vie d'une demande :**
 
 ```
-┌──────────────────────────────────────────────┐
-│  apps/web — PRÉSENTATION                     │  React 19 + Vite, JSX, Tailwind 3.4, shadcn/ui
-│  Écrans, formulaires, cache (TanStack Query) │  SDK Supabase : authentification UNIQUEMENT
-└──────────────────────┬───────────────────────┘
-                       │  HTTP REST / JSON — Authorization: Bearer <access_token>
-┌──────────────────────▼───────────────────────┐
-│  apps/api — MÉTIER                           │  Express 5 (ESM), zod, helmet, cors
-│  route → middlewares (auth, rôle, validation)│
-│        → contrôleur → service                │  clé service_role (serveur uniquement)
-└──────────────────────┬───────────────────────┘
-                       │  supabase-js : requêtes + appels RPC
-┌──────────────────────▼───────────────────────┐
-│  supabase/ — DONNÉES                         │  PostgreSQL + Auth + Storage
-│  Tables, contraintes, RLS « deny all »,      │  Écritures critiques = fonctions PL/pgSQL
-│  fonctions RPC transactionnelles             │  (transaction, verrous FOR UPDATE)
-└──────────────────────────────────────────────┘
+                ┌──► Approuvée ──► Remise
+En attente ─────┼──► Refusée
+                └──► Annulée (par le collaborateur)
 ```
 
-Le navigateur ne parle **jamais** directement aux données : la clé anon ne donne accès à rien
-(RLS activée sans policy). Toute donnée passe par l'API, qui vérifie le token, lit le rôle en
-base et valide chaque entrée.
+Aucun autre chemin n'est possible : une demande refusée ne peut pas devenir approuvée, une demande remise ne peut pas revenir en attente.
 
-## Stack et justification
+---
 
-| Couche | Choix | Pourquoi |
-|---|---|---|
-| Langage | JavaScript (ESM) + JSDoc | Aucun TypeScript : la forme des données est documentée en JSDoc (`@typedef`). |
-| API | **Express 5** | Plus simple à expliquer en JavaScript que NestJS ; les couches sont explicites et visibles. Express 5 transmet nativement les erreurs des fonctions `async`. |
-| Validation | **zod** (API et front) | Mêmes règles des deux côtés, messages en français. |
-| Données | **Supabase** (PostgreSQL) | Auth prête à l'emploi, Storage, et surtout des fonctions SQL transactionnelles. |
-| Front | **React + Vite**, React Router 6 | Standard, rapide, sans configuration lourde. |
-| UI | **Tailwind 3.4 + shadcn/ui** (JSX) | Composants accessibles (Radix), tokens du design system branchés sur les variables shadcn. |
-| Données front | **TanStack Query** | Cache, états chargement / erreur, invalidation après mutation. |
-| Formulaires | **React Hook Form + zod** | Validation déclarative, `aria-invalid` / `aria-describedby`. |
-| Tests | **Vitest**, Supertest, Testing Library | Un seul outil de test pour l'API et le front. |
+## 2. Lancer le projet
 
-## Installation
+**Prérequis :** Node.js 20 ou plus, et un projet [Supabase](https://supabase.com) (gratuit).
 
-Prérequis : Node.js 20+, un projet Supabase.
+### Étape 1 — Installer les dépendances
 
 ```bash
-# 1. Dépendances (npm workspaces : API + web en une commande)
 npm install
+```
 
-# 2. Base de données (une seule fois) : migrations puis données de référence
-supabase link --project-ref <ref>
-supabase db push                    # applique supabase/migrations/*.sql
-# puis exécuter supabase/seed.sql dans le SQL Editor (catégories + matériels)
+Une seule commande installe l'API **et** le site web (le projet utilise les *npm workspaces*).
 
-# 3. Variables d'environnement
-cp apps/api/.env.example apps/api/.env   # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
-cp apps/web/.env.example apps/web/.env   # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL
+### Étape 2 — Préparer la base de données (une seule fois)
 
-# 4. Comptes et demandes de démo (idempotent)
+```bash
+supabase link --project-ref <identifiant-du-projet>
+supabase db push
+```
+
+Ces commandes créent toutes les tables à partir des fichiers de `supabase/migrations/`.
+Exécutez ensuite `supabase/seed.sql` dans le **SQL Editor** de Supabase : il ajoute les catégories et le matériel.
+
+> **Important — désactiver les inscriptions libres.** Dans Supabase, allez dans *Authentication → Sign In / Providers* et désactivez « Allow new users to sign up ». Dans une organisation, c'est l'organisation qui attribue les accès : personne ne doit pouvoir se créer un compte seul.
+
+### Étape 3 — Configurer les variables d'environnement
+
+```bash
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
+```
+
+Puis remplissez les deux fichiers avec les valeurs de *Supabase → Settings → API* :
+
+| Variable | Fichier | À quoi elle sert |
+|---|---|---|
+| `SUPABASE_URL` | `apps/api/.env` | Adresse du projet Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | `apps/api/.env` **uniquement** | Clé « super-administrateur » de la base. **Elle ne doit jamais aller dans le front ni sur GitHub.** |
+| `PORT` | `apps/api/.env` | Port de l'API (3000) |
+| `WEB_URL` | `apps/api/.env` | Adresse du site autorisée à appeler l'API (`http://localhost:5173`) |
+| `VITE_API_URL` | `apps/web/.env` | Adresse de l'API (`http://localhost:3000/api/v1`) |
+| `VITE_SUPABASE_URL` | `apps/web/.env` | Adresse du projet Supabase |
+| `VITE_SUPABASE_ANON_KEY` | `apps/web/.env` | Clé publique, utilisée **seulement** pour se connecter |
+
+### Étape 4 — Créer les comptes et les demandes de démo
+
+```bash
 npm run seed:demo
+```
 
-# 5. Lancement : API (3000) + web (5173)
+On peut relancer cette commande sans risque : elle ne crée rien en double.
+
+### Étape 5 — Démarrer
+
+```bash
 npm run dev
 ```
 
-| Variable | Où | Rôle |
-|---|---|---|
-| `SUPABASE_URL` | `apps/api/.env` | URL du projet |
-| `SUPABASE_SERVICE_ROLE_KEY` | `apps/api/.env` **uniquement** | Contourne la RLS — ne quitte jamais le serveur |
-| `PORT`, `WEB_URL` | `apps/api/.env` | Port de l'API, origine autorisée par CORS |
-| `VITE_API_URL` | `apps/web/.env` | `http://localhost:3000/api/v1` |
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | `apps/web/.env` | Authentification seulement (clé publique) |
+| Service | Adresse |
+|---|---|
+| Site web | http://localhost:5173 |
+| API | http://localhost:3000/api/v1 |
+| Documentation de l'API (Swagger) | http://localhost:3000/api/docs |
 
-Autres commandes : `npm test` (API + web), `npm run lint`, `npm run build` (front).
+**Autres commandes utiles :** `npm test` (tous les tests), `npm run lint` (qualité du code), `npm run build` (version de production du site).
 
-## Comptes de démo
+---
+
+## 3. Comptes de démo
 
 | Rôle | E-mail | Mot de passe |
 |---|---|---|
@@ -92,83 +123,229 @@ Autres commandes : `npm test` (API + web), `npm run lint`, `npm run build` (fron
 | Collaboratrice | `aya@itrm.demo` | `User123!` |
 | Collaborateur | `yao@itrm.demo` | `User123!` |
 
-## Endpoints principaux
+Des demandes existent déjà dans tous les statuts (en attente, approuvée, remise, refusée), pour que chaque écran ait du contenu dès le départ.
 
-Documentation interactive : **http://localhost:3000/api/docs** (Swagger, `apps/api/docs/openapi.yaml`).
+---
 
-| Méthode | Route | Rôle |
+## 4. Démo en 5 minutes
+
+1. **Connexion collaborateur** (`aya@itrm.demo`) : montrer le tableau de bord et ses demandes récentes.
+2. **Catalogue** : rechercher, filtrer par catégorie et par disponibilité. Montrer les badges « Disponible », « Stock faible » et « Indisponible ».
+3. **Nouvelle demande** : ajouter deux matériels et un motif, puis l'envoyer. Une référence du type `REQ-2026-000005` est créée.
+4. **Connexion admin** (`admin@itrm.demo`) : ouvrir la demande. Le stock actuel est affiché à côté de chaque matériel.
+5. **Approuver** : le stock baisse. Tenter d'approuver à nouveau : l'application refuse (409).
+6. **Refuser une autre demande** sans motif : c'est bloqué, le motif est obligatoire.
+7. **Retour côté collaborateur** : la notification est arrivée, et la chronologie de la demande montre chaque étape.
+8. **Bonus** : réduire la fenêtre pour montrer la version mobile, puis ouvrir Swagger.
+
+---
+
+## 5. Comment c'est construit
+
+L'application suit une **architecture 3 tiers** : trois couches, chacune avec un rôle précis.
+
+```
+┌──────────────────────────────────────────────┐
+│  1. PRÉSENTATION — apps/web                  │   Ce que l'utilisateur voit
+│  React : écrans, formulaires                 │
+└──────────────────────┬───────────────────────┘
+                       │  Requêtes HTTP + jeton de connexion
+┌──────────────────────▼───────────────────────┐
+│  2. MÉTIER — apps/api                        │   Ce qui décide
+│  Express : vérifie qui vous êtes,            │
+│  ce que vous avez le droit de faire,         │
+│  et si les données sont valides              │
+└──────────────────────┬───────────────────────┘
+                       │  Requêtes SQL + fonctions
+┌──────────────────────▼───────────────────────┐
+│  3. DONNÉES — supabase/                      │   Ce qui stocke
+│  PostgreSQL : tables, contraintes,           │
+│  opérations critiques sécurisées             │
+└──────────────────────────────────────────────┘
+```
+
+**La règle d'or :** le navigateur ne touche **jamais** directement aux données. Tout passe par l'API, qui contrôle chaque demande. Même un utilisateur qui modifierait le code du site dans son navigateur ne pourrait pas contourner les règles.
+
+C'est un **monolithe modulaire** : une seule API, mais découpée en modules indépendants (matériels, demandes, notifications…). C'est plus simple à développer et à déployer que des microservices, qui ne se justifient pas à cette échelle.
+
+### Les technologies et pourquoi
+
+| Rôle | Technologie | Pourquoi ce choix |
 |---|---|---|
-| GET | `/health` | public |
-| GET | `/auth/me` | profil et rôle |
-| GET | `/materials`, `/materials/:id`, `/categories` | catalogue (actifs uniquement) |
-| POST | `/requests` | création (RPC `create_request`) |
-| GET | `/requests/me`, `/requests/:id` | mes demandes (404 si la demande est à un autre) |
-| PATCH | `/requests/:id/cancel` | annulation (RPC `cancel_request`) |
-| GET/PATCH | `/notifications…` | liste, compteur, lecture |
-| GET | `/admin/requests`, `/admin/requests/:id` | ADMIN — liste, détail avec stock actuel |
-| PATCH | `/admin/requests/:id/approve` · `/reject` · `/fulfill` | ADMIN — décisions (RPC) |
-| GET/POST/PUT/PATCH | `/admin/materials…`, `/admin/categories…` | ADMIN — gestion + audit |
-| GET | `/admin/dashboard`, `/admin/audit` | ADMIN — indicateurs, journal |
+| Langage | **JavaScript** | Un seul langage partout. La forme des données est documentée avec des commentaires JSDoc. |
+| API | **Express 5** | Simple à lire et à expliquer. Chaque couche (route, contrôleur, service) est visible. |
+| Validation | **zod** | Les mêmes règles de validation côté API et côté site, avec des messages en français. |
+| Base de données | **Supabase** (PostgreSQL) | Base solide, authentification et stockage d'images déjà inclus. |
+| Site web | **React + Vite** | Standard du marché, démarrage rapide. |
+| Interface | **Tailwind CSS + shadcn/ui** | Composants modernes et accessibles, fidèles à la maquette. |
+| Chargement des données | **TanStack Query** | Gère le cache, le chargement, les erreurs et le rafraîchissement automatique. |
+| Formulaires | **React Hook Form + zod** | Validation claire, accessible aux lecteurs d'écran. |
+| Tests | **Vitest**, Supertest, Testing Library | Un seul outil de test pour l'API et le site. |
 
-Erreurs : `{ statusCode, code, message, details? }`, message en français.
-Listes : `{ data, meta: { page, limite, total, totalPages } }`, `limit` ≤ 50.
+---
 
-## Choix techniques
+## 6. Organisation du code
 
-**Écritures critiques dans des fonctions PostgreSQL (RPC).** supabase-js ne sait pas faire de
-transaction multi-requêtes. `approve_request` verrouille la demande puis les lignes de stock
-(`SELECT … FOR UPDATE`, dans un ordre déterministe pour éviter les interblocages), vérifie le
-stock, le décrémente, change le statut, écrit l'historique, la notification et l'audit — **tout
-ou rien**. Deux administrateurs qui approuvent en même temps sont sérialisés ; le second voit le
-stock déjà décrémenté ou la demande déjà approuvée et reçoit un **409**.
+```
+it-request-manager/
+├── apps/
+│   ├── api/                  ← Tier MÉTIER
+│   │   ├── src/
+│   │   │   ├── config/        variables d'environnement, connexion Supabase
+│   │   │   ├── middlewares/   authentification, rôles, validation, erreurs
+│   │   │   ├── modules/       un dossier par sujet : materiels, demandes, notifications…
+│   │   │   └── utils/         outils partagés (pagination, conversion, audit)
+│   │   ├── docs/openapi.yaml  documentation Swagger
+│   │   └── tests/
+│   │
+│   └── web/                  ← Tier PRÉSENTATION
+│       └── src/
+│           ├── app/           routes, mise en page
+│           ├── components/    composants réutilisables (badges, tableaux…)
+│           ├── fonctionnalites/  un dossier par écran : catalogue, demandes, admin…
+│           └── lib/           appel à l'API, formatage des dates
+│
+├── supabase/                 ← Tier DONNÉES
+│   ├── migrations/           création des tables, fonctions et sécurité
+│   └── seed.sql              catégories et matériel de départ
+│
+└── docs/                     captures d'écran, guide d'explication
+```
 
-**Double contrôle de la machine d'état.** `machineEtat.js` refuse tôt une transition impossible
-(erreur rapide et testée) ; la base revérifie sous verrou (garantie finale).
+**Le trajet d'une requête dans l'API :**
 
-**service_role côté serveur uniquement.** La clé qui contourne la RLS n'existe que dans
-`apps/api/.env`. Le front n'a que la clé anon, qui ne sert qu'à se connecter.
+```
+Route  →  Middlewares        →  Contrôleur          →  Service               →  Base de données
+          (connecté ? admin ?    (lit la requête,       (applique les règles     (enregistre
+           données valides ?)    renvoie la réponse)    métier)                   les données)
+```
 
-**RLS en « deny all ».** RLS activée sur toutes les tables, sans aucune policy, et droits
-révoqués pour `anon` / `authenticated`. Même si la clé anon fuit, elle ne lit rien.
+Chaque module de `apps/api/src/modules/` suit ce même découpage : `*.routes.js`, `*.controleur.js`, `*.service.js`, `*.schemas.js`.
 
-**Rôle lu en base.** Le rôle vient de `profiles.role`, jamais de `user_metadata`
-(modifiable par l'utilisateur). Le menu Administration côté front n'est que du confort visuel :
-l'API répond 403 à un USER sur `/admin/*`.
+---
 
-**Références par séquence.** `REQ-AAAA-NNNNNN` est tiré d'une `SEQUENCE` PostgreSQL : jamais
-deux fois la même valeur, même sous forte concurrence (contrairement à `COUNT(*) + 1`).
+## 7. Les choix techniques importants
 
-**JSON en français.** Les colonnes SQL restent en anglais (contrat figé) ; `utils/convertisseurs.js`
-expose un JSON camelCase français (`quantiteDisponible`, `statut`…).
+### Le stock ne peut jamais devenir négatif
 
-## Captures
+**Le problème :** il reste 2 écrans. Deux demandes de 2 écrans sont en attente, et deux administrateurs cliquent sur « Approuver » en même temps. Sans précaution, les deux passeraient et le stock tomberait à −2.
 
-| Connexion | Nouvelle demande | Détail (admin) |
-|---|---|---|
-| ![](docs/captures/01-connexion.png) | ![](docs/captures/05-nouvelle-demande.png) | ![](docs/captures/11-admin-detail.png) |
-| **Dashboard admin** | **Refus : motif obligatoire** | **Mobile** |
-| ![](docs/captures/09-admin-dashboard.png) | ![](docs/captures/11b-admin-refus-erreur.png) | ![](docs/captures/m07-detail-demande.png) |
+**La solution :** l'approbation se fait dans une **fonction PostgreSQL** (`approve_request`) qui fonctionne en **tout ou rien** (une *transaction*) :
 
-## Tests
+1. elle **verrouille** la demande et les lignes de stock concernées : le deuxième administrateur doit attendre que le premier ait fini ;
+2. elle vérifie que le stock est suffisant ;
+3. elle diminue le stock ;
+4. elle change le statut de la demande ;
+5. elle enregistre l'historique, la notification et le journal d'audit.
 
-- **API (68)** : machine d'état (25 transitions), traduction des erreurs RPC → HTTP,
-  validation zod, middlewares (sans token / token invalide → 401, USER sur `/admin` → 403),
-  Supertest sur `/health` et sur l'approbation avec stock insuffisant (409).
-- **Web (18)** : `BadgeStatut` en français, schéma de la nouvelle demande, validation du
-  formulaire de connexion.
-- Parcours complet vérifié dans Chrome (collaborateur puis admin, desktop et mobile) sans
-  aucune erreur console.
+Si une seule étape échoue, **rien** n'est enregistré. Le second administrateur voit le stock déjà diminué et reçoit une erreur claire (409). En dernier filet de sécurité, la base elle-même interdit un stock négatif.
 
-## Limites et évolutions possibles
+> Pourquoi une fonction SQL ? Parce que la bibliothèque Supabase côté JavaScript ne sait pas regrouper plusieurs requêtes en une seule transaction. La base de données, elle, sait le faire.
 
-- **Écart base déployée / migrations du dépôt** : sur le projet Supabase fourni, les fonctions
-  de statistiques s'appellent `user_dashboard_stats` / `admin_dashboard_stats`,
-  `create_request` renvoie `{ id, status, reference }` et le détail de `INSUFFICIENT_STOCK` est
-  un tableau JSON. L'API accepte les deux variantes (commentaires dans le code) ; il faudrait
-  réaligner les fichiers de migration sur la base réelle.
-- Les écritures admin sur matériels et catégories et leur ligne d'audit sont deux requêtes
-  distinctes (pas de transaction) ; une RPC dédiée rendrait l'audit atomique.
-- Pas de réinitialisation de mot de passe ni de gestion des utilisateurs dans l'interface.
-- Le sélecteur de la nouvelle demande charge au plus 50 matériels (plafond de l'API).
-- Évolutions : export CSV, notifications temps réel (Supabase Realtime), tests end-to-end
-  Playwright, intégration continue GitHub Actions.
+### Les transitions de statut sont vérifiées deux fois
+
+- **Dans l'API** (`machineEtat.js`) : une transition impossible est refusée tout de suite, avec un message clair. C'est rapide et facile à tester.
+- **Dans la base**, pendant le verrouillage : c'est la garantie finale, même en cas d'accès simultanés.
+
+### La clé secrète reste sur le serveur
+
+Supabase fournit deux clés :
+- **la clé publique (anon)**, dans le site, qui sert **uniquement** à se connecter ;
+- **la clé de service**, qui a tous les droits, et qui n'existe **que** dans `apps/api/.env`.
+
+### La base est fermée par défaut
+
+La **RLS** (*Row Level Security*, sécurité ligne par ligne) est activée sur toutes les tables, **sans aucune autorisation**. Résultat : même si quelqu'un récupère la clé publique et interroge directement Supabase, il ne voit rien. Seule l'API, avec sa clé de service, accède aux données.
+
+### Le rôle est lu dans la base, jamais dans le navigateur
+
+Le rôle (collaborateur ou admin) est lu dans la table `profiles`, que l'utilisateur ne peut pas modifier. Le menu « Administration » est masqué aux collaborateurs, mais c'est seulement du confort visuel : **la vraie protection est dans l'API**, qui répond 403 (« accès interdit ») à un collaborateur sur une route admin.
+
+### Les références ne peuvent pas être en double
+
+Les références `REQ-2026-000001` viennent d'une **séquence** PostgreSQL, un compteur qui ne donne jamais deux fois le même numéro, même si cent demandes arrivent en même temps. La méthode naïve (« compter les demandes et ajouter 1 ») produirait des doublons.
+
+### Une demande d'un autre collaborateur est « introuvable »
+
+Si un collaborateur tente d'ouvrir la demande d'un collègue, l'API répond **404 (introuvable)** et non 403 (interdit). Ainsi, on ne révèle même pas que la demande existe.
+
+### Le JSON de l'API est en français
+
+Les colonnes de la base restent en anglais (`available_quantity`). L'API les convertit en français (`quantiteDisponible`) dans `utils/convertisseurs.js`, pour que le code du site soit plus lisible.
+
+---
+
+## 8. L'API
+
+Documentation complète et interactive : **http://localhost:3000/api/docs**
+
+Toutes les routes commencent par `/api/v1` et demandent d'être connecté, sauf `/health`.
+
+| Méthode | Route | Qui | À quoi ça sert |
+|---|---|---|---|
+| GET | `/health` | tout le monde | vérifier que l'API fonctionne |
+| GET | `/auth/me` | connecté | récupérer son profil et son rôle |
+| GET | `/materials`, `/materials/:id` | connecté | catalogue (matériel actif uniquement) |
+| GET | `/categories` | connecté | catégories pour les filtres |
+| POST | `/requests` | connecté | créer une demande |
+| GET | `/requests/me`, `/requests/:id` | connecté | voir ses demandes |
+| PATCH | `/requests/:id/cancel` | connecté | annuler sa demande en attente |
+| GET / PATCH | `/notifications…` | connecté | lire ses notifications |
+| GET | `/admin/requests`, `/admin/requests/:id` | admin | toutes les demandes |
+| PATCH | `/admin/requests/:id/approve` | admin | approuver |
+| PATCH | `/admin/requests/:id/reject` | admin | refuser (motif obligatoire) |
+| PATCH | `/admin/requests/:id/fulfill` | admin | marquer comme remis |
+| GET / POST / PUT / PATCH | `/admin/materials…`, `/admin/categories…` | admin | gérer le catalogue |
+| GET | `/admin/dashboard`, `/admin/audit` | admin | statistiques, journal |
+
+**Format des réponses :**
+
+```jsonc
+// Une liste
+{ "data": [ ... ], "meta": { "page": 1, "limite": 20, "total": 42, "totalPages": 3 } }
+
+// Une erreur
+{ "statusCode": 409, "code": "INSUFFICIENT_STOCK", "message": "Stock insuffisant pour ..." }
+```
+
+---
+
+## 9. Tests
+
+```bash
+npm test
+```
+
+**API — 68 tests :**
+- les 25 transitions de statut possibles et impossibles ;
+- la traduction des erreurs de la base en messages clairs et en codes HTTP ;
+- la validation des données (demande vide, quantité à zéro…) ;
+- la sécurité : sans connexion → 401, collaborateur sur une route admin → 403 ;
+- l'approbation avec un stock insuffisant → 409.
+
+**Site web — 18 tests :**
+- affichage des statuts en français ;
+- règles du formulaire de nouvelle demande ;
+- validation du formulaire de connexion.
+
+Le parcours complet (collaborateur puis admin, sur ordinateur et sur mobile) a aussi été vérifié à la main dans Chrome, sans aucune erreur dans la console.
+
+---
+
+## 10. Limites connues et évolutions
+
+### Limites
+
+- **Écart entre la base déployée et les fichiers de migration.** Sur le projet Supabase utilisé, certaines fonctions ont un nom ou un format de réponse légèrement différent de ceux décrits dans `supabase/migrations/`. L'API gère les deux cas (c'est expliqué en commentaire dans le code), mais il faudrait réaligner les fichiers de migration sur la base réelle.
+- **L'audit des modifications de matériel n'est pas atomique.** Modifier un matériel et écrire la ligne d'audit se font en deux requêtes séparées. Une fonction SQL dédiée garantirait le « tout ou rien ».
+- **Pas de gestion des utilisateurs dans l'interface** : pas de création de compte par l'admin, pas de désactivation, pas de réinitialisation du mot de passe.
+- Le formulaire de nouvelle demande propose au maximum 50 matériels.
+
+### Évolutions possibles
+
+- **Gestion des comptes par l'administrateur** : création avec mot de passe temporaire, changement obligatoire à la première connexion, désactivation d'un compte au départ d'un collaborateur.
+- **Connexion via le compte de l'entreprise** (Microsoft 365 ou Google Workspace), pour ne plus gérer de mots de passe dans l'application.
+- Notifications en temps réel (Supabase Realtime).
+- Export des demandes en CSV.
+- Tests de bout en bout automatisés (Playwright).
+- Intégration continue avec GitHub Actions.

@@ -30,7 +30,7 @@ export function reinitialiserFaux() {
 /**
  * Déclare un utilisateur connecté (token + profil) pour les tests d'API.
  * @param {string} token
- * @param {{ id: string, role: 'USER'|'ADMIN', active?: boolean }} profil
+ * @param {{ id: string, role: 'USER'|'ADMIN', active?: boolean, mustChangePassword?: boolean }} profil
  */
 export function connecter(token, profil) {
   etatFaux.utilisateurs[token] = { id: profil.id };
@@ -42,6 +42,8 @@ export function connecter(token, profil) {
       last_name: 'Utilisateur',
       role: profil.role,
       active: profil.active ?? true,
+      must_change_password: profil.mustChangePassword ?? false,
+      created_at: '2026-09-28T08:00:00Z',
     },
     error: null,
   };
@@ -86,7 +88,12 @@ export const fauxSupabase = {
       if (!user) return { data: { user: null }, error: { message: 'invalid JWT' } };
       return { data: { user }, error: null };
     }),
-    admin: { signOut: vi.fn(async () => ({ error: null })) },
+    admin: {
+      signOut: vi.fn(async () => ({ error: null })),
+      createUser: vi.fn(async () => ({ data: { user: { id: 'nouvel-id' } }, error: null })),
+      updateUserById: vi.fn(async () => ({ data: {}, error: null })),
+      deleteUser: vi.fn(async () => ({ data: {}, error: null })),
+    },
   },
   from: vi.fn((table) => creerRequete(table)),
   rpc: vi.fn(async (nom) => etatFaux.rpc[nom] ?? { data: null, error: null }),

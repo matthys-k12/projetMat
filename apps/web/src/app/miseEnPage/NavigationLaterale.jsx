@@ -20,6 +20,7 @@ import {
   LogOut,
   Package,
   User,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/fonctionnalites/auth/useAuth';
@@ -37,6 +38,7 @@ const LIENS_ADMIN = [
   { vers: '/admin/requests', libelle: 'Demandes', icone: ClipboardList },
   { vers: '/admin/materials', libelle: 'Matériels', icone: Boxes },
   { vers: '/admin/categories', libelle: 'Catégories', icone: FolderTree },
+  { vers: '/admin/users', libelle: 'Utilisateurs', icone: Users },
   { vers: '/admin/audit', libelle: 'Audit', icone: History },
 ];
 

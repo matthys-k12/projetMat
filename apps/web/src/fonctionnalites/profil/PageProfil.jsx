@@ -2,7 +2,8 @@
  * Profil de l'utilisateur connecté (lecture seule) : identité et rôle, lus via GET /auth/me.
  * Tier : présentation.
  */
-import { LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { KeyRound, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EnTetePage } from '@/components/communs/EnTetePage';
 import { Carte, CorpsCarte, EnTeteCarte } from '@/components/communs/Carte';
@@ -48,7 +49,12 @@ export function PageProfil() {
             Pour modifier vos informations, contactez le support IT au poste 4400.
           </p>
         </CorpsCarte>
-        <div className="flex justify-end border-t px-5 py-3">
+        <div className="flex justify-end gap-2 border-t px-5 py-3">
+          <Button variant="outline" asChild>
+            <Link to="/change-password">
+              <KeyRound aria-hidden="true" /> Changer mon mot de passe
+            </Link>
+          </Button>
           <Button variant="outline" onClick={seDeconnecter}>
             <LogOut aria-hidden="true" /> Déconnexion
           </Button>

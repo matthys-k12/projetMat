@@ -31,6 +31,7 @@ const SEGMENTS = {
   categories: 'Catégories',
   audit: 'Audit',
   edit: 'Modifier',
+  users: 'Utilisateurs',
 };
 
 /**

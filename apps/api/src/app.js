@@ -33,6 +33,7 @@ import {
   routesTableauDeBord,
 } from './modules/tableauDeBord/tableauDeBord.routes.js';
 import { routesAdminAudit } from './modules/audit/audit.routes.js';
+import { routesAdminUtilisateurs } from './modules/utilisateurs/utilisateurs.routes.js';
 
 /**
  * Charge la documentation OpenAPI (docs/openapi.yaml).
@@ -56,6 +57,7 @@ function creerRoutesAdmin() {
   admin.use('/materials', routesAdminMateriels);
   admin.use('/categories', routesAdminCategories);
   admin.use('/audit', routesAdminAudit);
+  admin.use('/users', routesAdminUtilisateurs);
   return admin;
 }
 

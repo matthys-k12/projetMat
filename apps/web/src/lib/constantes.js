@@ -99,6 +99,10 @@ export const ACTIONS_AUDIT = {
   CATEGORY_CREATED: 'Catégorie créée',
   CATEGORY_UPDATED: 'Catégorie modifiée',
   CATEGORY_STATUS_CHANGED: 'Statut de la catégorie modifié',
+  USER_CREATED: 'Compte créé',
+  USER_STATUS_CHANGED: 'Statut du compte modifié',
+  USER_ROLE_CHANGED: 'Rôle modifié',
+  PASSWORD_CHANGED: 'Mot de passe changé',
 };
 
 /** Libellés des types de ressource du journal d'audit. */
@@ -106,4 +110,5 @@ export const TYPES_ENTITE = {
   request: 'Demande',
   material: 'Matériel',
   category: 'Catégorie',
+  user: 'Utilisateur',
 };

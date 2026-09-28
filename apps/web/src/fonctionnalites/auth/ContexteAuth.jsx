@@ -19,6 +19,7 @@ import { lireMonProfil, revoquerSession } from './api';
  * @property {boolean} estAdmin
  * @property {(email: string, motDePasse: string) => Promise<void>} seConnecter
  * @property {() => Promise<void>} seDeconnecter
+ * @property {() => Promise<void>} rechargerProfil relit GET /auth/me (ex. après changement de mot de passe)
  */
 
 /** @type {import('react').Context<ValeurAuth|null>} */
@@ -76,8 +77,15 @@ export function FournisseurAuth({ children }) {
   }, []);
 
   const valeur = useMemo(
-    () => ({ etat, profil, estAdmin: profil?.role === 'ADMIN', seConnecter, seDeconnecter }),
-    [etat, profil, seConnecter, seDeconnecter],
+    () => ({
+      etat,
+      profil,
+      estAdmin: profil?.role === 'ADMIN',
+      seConnecter,
+      seDeconnecter,
+      rechargerProfil: chargerProfil,
+    }),
+    [etat, profil, seConnecter, seDeconnecter, chargerProfil],
   );
 
   return <ContexteAuth.Provider value={valeur}>{children}</ContexteAuth.Provider>;

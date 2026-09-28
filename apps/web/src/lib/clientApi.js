@@ -6,6 +6,7 @@
  * - Ajoute « Authorization: Bearer <token> » à chaque requête (token de la session Supabase).
  * - Lit le format d'erreur de l'API { statusCode, code, message, details } et lève une ErreurClientApi.
  * - Sur 401 (session expirée ou révoquée) : déconnexion puis redirection vers /login.
+ * - Sur 403 PASSWORD_CHANGE_REQUIRED : redirection vers /change-password.
  */
 import { supabase } from './supabase';
 
@@ -100,6 +101,13 @@ export async function appelerApi(chemin, options = {}) {
   if (reponse.status === 204) return null;
 
   const json = await reponse.json().catch(() => null);
+  // Mot de passe temporaire pas encore remplacé : l'API refuse tout le reste
+  if (
+    json?.code === 'PASSWORD_CHANGE_REQUIRED' &&
+    window.location.pathname !== '/change-password'
+  ) {
+    window.location.assign('/change-password');
+  }
   if (!reponse.ok) {
     throw new ErreurClientApi(
       reponse.status,

@@ -10,12 +10,19 @@ import { supabase } from '../config/supabase.js';
 import { ErreurApi } from '../utils/ErreurApi.js';
 
 /**
+ * Routes encore accessibles tant que le mot de passe temporaire n'a pas été remplacé :
+ * lire son profil (pour savoir qu'il faut le changer), le changer, se déconnecter.
+ */
+export const ROUTES_AVANT_CHANGEMENT = ['/auth/me', '/auth/password', '/auth/logout'];
+
+/**
  * @typedef {Object} UtilisateurConnecte
  * @property {string} id
  * @property {string} email
  * @property {'USER'|'ADMIN'} role
  * @property {string} prenom
  * @property {string} nom
+ * @property {boolean} doitChangerMotDePasse
  */
 
 /**
@@ -39,9 +46,11 @@ export function extraireToken(entete) {
  * - Le rôle est lu dans public.profiles, JAMAIS dans user_metadata, que
  *   l'utilisateur peut modifier lui-même depuis le navigateur.
  * - Un compte désactivé (active = false) est refusé même si son token est valide.
+ * - Tant que le mot de passe temporaire (créé par un admin) n'est pas remplacé,
+ *   seules les routes ROUTES_AVANT_CHANGEMENT sont autorisées (403 PASSWORD_CHANGE_REQUIRED).
  *
  * @type {import('express').RequestHandler}
- * @throws {ErreurApi} 401 si token absent/invalide, 403 si compte inactif
+ * @throws {ErreurApi} 401 si token absent/invalide, 403 si compte inactif ou mot de passe à changer
  */
 export async function authentifier(req, _res, next) {
   const token = extraireToken(req.headers.authorization);
@@ -54,17 +63,25 @@ export async function authentifier(req, _res, next) {
     throw ErreurApi.nonAuthentifie('Session invalide ou expirée. Veuillez vous reconnecter.');
   }
 
-  const { data: profil } = await supabase
+  const { data: profil, error: erreurProfil } = await supabase
     .from('profiles')
-    .select('id, email, first_name, last_name, role, active')
+    .select('id, email, first_name, last_name, role, active, must_change_password')
     .eq('id', data.user.id)
     .maybeSingle();
+  if (erreurProfil) throw erreurProfil;
 
   if (!profil) {
     throw ErreurApi.nonAuthentifie('Profil introuvable pour ce compte.');
   }
   if (!profil.active) {
     throw new ErreurApi(403, 'USER_NOT_ALLOWED', 'Votre compte est désactivé.');
+  }
+  if (profil.must_change_password && !ROUTES_AVANT_CHANGEMENT.includes(req.path)) {
+    throw new ErreurApi(
+      403,
+      'PASSWORD_CHANGE_REQUIRED',
+      'Vous devez remplacer votre mot de passe temporaire avant de continuer.',
+    );
   }
 
   /** @type {UtilisateurConnecte} */
@@ -74,6 +91,7 @@ export async function authentifier(req, _res, next) {
     role: profil.role,
     prenom: profil.first_name,
     nom: profil.last_name,
+    doitChangerMotDePasse: profil.must_change_password,
   };
   next();
 }

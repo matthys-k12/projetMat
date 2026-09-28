@@ -45,6 +45,7 @@ export function construireUrlImage(cheminImage) {
  * @property {string} nomComplet
  * @property {'USER'|'ADMIN'} role
  * @property {boolean} actif
+ * @property {boolean} doitChangerMotDePasse vrai tant que le mot de passe temporaire n'est pas remplacé
  */
 
 /**
@@ -61,6 +62,7 @@ export function versProfilApi(ligne) {
     nomComplet: `${ligne.first_name} ${ligne.last_name}`.trim(),
     role: ligne.role,
     actif: ligne.active,
+    doitChangerMotDePasse: ligne.must_change_password ?? false,
   };
 }
 

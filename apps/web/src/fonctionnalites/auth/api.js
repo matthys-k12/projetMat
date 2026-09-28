@@ -13,3 +13,11 @@ export function lireMonProfil() {
 export function revoquerSession() {
   return appelerApi('/auth/logout', { methode: 'POST' });
 }
+
+/**
+ * POST /auth/password — remplace le mot de passe (temporaire) de l'utilisateur connecté.
+ * @param {string} nouveauMotDePasse
+ */
+export function changerMotDePasse(nouveauMotDePasse) {
+  return appelerApi('/auth/password', { methode: 'POST', corps: { nouveauMotDePasse } });
+}

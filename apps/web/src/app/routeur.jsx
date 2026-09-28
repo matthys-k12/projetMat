@@ -3,7 +3,8 @@
  *
  * Tier : présentation.
  * - Publique : /login
- * - Connecté (GardeConnexion) : tableau de bord, catalogue, demandes, notifications, profil
+ * - Connecté (GardeConnexion) : tableau de bord, catalogue, demandes, notifications, profil,
+ *   /change-password (forcée tant que le mot de passe temporaire n'est pas remplacé)
  * - ADMIN (GardeAdmin, confort visuel — l'API protège réellement /admin) : /admin/*
  */
 import { lazy } from 'react';
@@ -14,6 +15,7 @@ import { PageIntrouvable } from './PageIntrouvable';
 import { GardeConnexion } from '@/fonctionnalites/auth/GardeConnexion';
 import { GardeAdmin } from '@/fonctionnalites/auth/GardeAdmin';
 import { PageConnexion } from '@/fonctionnalites/auth/PageConnexion';
+import { PageChangementMotDePasse } from '@/fonctionnalites/auth/PageChangementMotDePasse';
 import { PageTableauDeBord } from '@/fonctionnalites/tableauDeBord/PageTableauDeBord';
 import { PageCatalogue } from '@/fonctionnalites/materiels/PageCatalogue';
 import { PageDetailMateriel } from '@/fonctionnalites/materiels/PageDetailMateriel';
@@ -61,6 +63,10 @@ const PageAdminAudit = charger(
   () => import('@/fonctionnalites/admin/audit/PageAdminAudit'),
   'PageAdminAudit',
 );
+const PageAdminUtilisateurs = charger(
+  () => import('@/fonctionnalites/admin/utilisateurs/PageAdminUtilisateurs'),
+  'PageAdminUtilisateurs',
+);
 
 export function Routeur() {
   return (
@@ -72,6 +78,11 @@ export function Routeur() {
         </Route>
 
         <Route element={<GardeConnexion />}>
+          {/* Choix du mot de passe définitif : même mise en page que la connexion */}
+          <Route element={<MiseEnPageAuth />}>
+            <Route path="/change-password" element={<PageChangementMotDePasse />} />
+          </Route>
+
           <Route element={<MiseEnPageApp />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<PageTableauDeBord />} />
@@ -93,6 +104,7 @@ export function Routeur() {
               <Route path="materials/:id/edit" element={<PageFormulaireMateriel />} />
               <Route path="categories" element={<PageAdminCategories />} />
               <Route path="audit" element={<PageAdminAudit />} />
+              <Route path="users" element={<PageAdminUtilisateurs />} />
             </Route>
 
             <Route path="*" element={<PageIntrouvable />} />
